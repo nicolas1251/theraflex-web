@@ -33,7 +33,7 @@ class SignalProcessor {
 let port, reader;
 const dsp = new SignalProcessor();
 
-// UI Elements
+// Elementos de Interfaz
 const splashDiv = document.getElementById('splashDiv');
 const menuDiv = document.getElementById('menuDiv');
 const gameDiv = document.getElementById('gameDiv');
@@ -44,31 +44,36 @@ const lblValor = document.getElementById('lblValor');
 const lblUmbral = document.getElementById('lblUmbral');
 const lblReps = document.getElementById('lblReps');
 
-// Canvas Setup
+// Configuración del Lienzo (Canvas)
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const ANCHO = canvas.width;
 const ALTO = canvas.height;
 
-// Variables de Terapia
+// Variables de Terapia y Estado
 let min_ruido = 0.0;
 let max_senal = 50.0;
 let umbral_calibrado = 10.0;
 let valor_procesado = 0.0;
 
-// Estados del Juego
 const ESTADO_MENU = 0, ESTADO_CALIBRACION = 1, ESTADO_JUGANDO = 2;
 let estado_actual = ESTADO_MENU;
 let modo_juego = null;
 let repeticiones = 0;
 
-// Físicas (Juego 1)
+// Variables de Calibración
+let paso_calibracion = 0;
+let timer_calibracion = 0;
+let buffer_calibracion = [];
+
+// Físicas y Tiempos (Juego 1)
 let player_y = ALTO - 200;
 let player_vel = 0;
 const gravity = 1.2;
 const jump_force = -22;
 let obstaculos = [];
 let last_jump_time = 0;
+let last_obstacle_time = 0; // Para controlar la frecuencia de aparición
 
 // --- GESTIÓN DE PANTALLAS ---
 function mostrarMenuPrincipal() {
@@ -77,6 +82,8 @@ function mostrarMenuPrincipal() {
     gameDiv.style.display = "none";
     topBar.style.display = "block";
     menuDiv.style.display = "block";
+    
+    // Actualiza el texto con los datos reales guardados
     document.getElementById('lblCalibracion').innerText = `Calibración Actual -> Reposo: ${min_ruido.toFixed(1)} | Máx: ${max_senal.toFixed(1)} | Umbral: ${umbral_calibrado.toFixed(1)}`;
 }
 
@@ -87,108 +94,193 @@ function iniciarJuego(modo) {
     player_y = ALTO - 200;
     player_vel = 0;
     obstaculos = [];
+    last_obstacle_time = Date.now();
     lblReps.innerText = `REPETICIONES: ${repeticiones}`;
     
     menuDiv.style.display = "none";
     gameDiv.style.display = "block";
 }
 
-// Eventos de Botones
+// Botones del Menú
 document.getElementById('btnCalibrar').addEventListener('click', () => { 
-    // Calibración rápida simulada (para esta prueba)
-    min_ruido = 2.0; 
-    max_senal = 80.0;
-    umbral_calibrado = 20.0; 
-    lblUmbral.innerText = umbral_calibrado.toFixed(1);
-    mostrarMenuPrincipal();
-    alert("Sensor Calibrado (Umbral ajustado a 20.0)");
+    estado_actual = ESTADO_CALIBRACION;
+    paso_calibracion = 0;
+    timer_calibracion = Date.now();
+    menuDiv.style.display = "none";
+    gameDiv.style.display = "block";
 });
 document.getElementById('btnJuego1').addEventListener('click', () => iniciarJuego(1));
+document.getElementById('btnJuego2').addEventListener('click', () => alert("Juego 2 en construcción para Web"));
+document.getElementById('btnJuego3').addEventListener('click', () => alert("Juego 3 en construcción para Web"));
 
-// --- MOTOR GRÁFICO (El reemplazo de game_loop de Tkinter) ---
+// --- MOTOR GRÁFICO (DIBUJO A 60 FPS) ---
 function loop() {
-    // 1. Limpiar el lienzo en cada frame
-    ctx.clearRect(0, 0, ANCHO, ALTO);
+    let current_time = Date.now();
+    ctx.clearRect(0, 0, ANCHO, ALTO); // Limpiar pantalla
 
-    if (estado_actual === ESTADO_JUGANDO) {
-        if (modo_juego === 1) {
-            let suelo_y = ALTO - 200;
-            let current_time = Date.now();
-
-            // Lógica de Salto accionada por EMG
-            if (valor_procesado > umbral_calibrado && player_y >= suelo_y && (current_time - last_jump_time) > 300) {
-                player_vel = jump_force;
-                last_jump_time = current_time;
-            }
-
-            // Aplicar gravedad
-            player_vel += gravity;
-            player_y += player_vel;
-            if (player_y > suelo_y) {
-                player_y = suelo_y;
-                player_vel = 0;
-            }
-
-            // Dibujar Suelo
+    // -----------------------------------------
+    // LÓGICA DE CALIBRACIÓN VISUAL
+    // -----------------------------------------
+    if (estado_actual === ESTADO_CALIBRACION) {
+        ctx.textAlign = "center";
+        
+        if (paso_calibracion === 0) {
+            ctx.fillStyle = "#FF9800";
+            ctx.font = "32px Arial bold";
+            ctx.fillText("ASISTENTE DE CALIBRACIÓN", ANCHO/2, 150);
             ctx.fillStyle = "white";
-            ctx.fillRect(0, suelo_y, ANCHO, 3);
-
-            // Generar Obstáculos
-            if (Math.random() < 0.015) { // Probabilidad de generar obstáculo por frame
-                obstaculos.push({ x: ANCHO, y: suelo_y - 40, passed: false });
-            }
-
-            // Dibujar Jugador (Equivalente a create_oval de Tkinter)
-            ctx.beginPath();
-            ctx.arc(120, player_y - 20, 20, 0, Math.PI * 2);
-            ctx.fillStyle = "#BB86FC";
-            ctx.fill();
-            ctx.strokeStyle = "white";
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
-            // Mover y dibujar obstáculos
-            for (let i = obstaculos.length - 1; i >= 0; i--) {
-                let obs = obstaculos[i];
-                obs.x -= 9; // Velocidad del obstáculo
-
-                // Dibujar obstáculo (Equivalente a create_polygon triangular)
-                ctx.beginPath();
-                ctx.moveTo(obs.x, obs.y + 40);
-                ctx.lineTo(obs.x + 20, obs.y);
-                ctx.lineTo(obs.x + 40, obs.y + 40);
-                ctx.closePath();
-                ctx.fillStyle = "#CF6679";
-                ctx.fill();
-
-                // Colisiones básicas
-                if (120 > obs.x && 100 < obs.x + 40 && player_y > obs.y + 10) {
-                    alert(`¡Fin del juego! Repeticiones: ${repeticiones}`);
-                    mostrarMenuPrincipal();
-                }
-
-                // Puntaje
-                if (obs.x < 100 && !obs.passed) {
-                    repeticiones++;
-                    lblReps.innerText = `REPETICIONES: ${repeticiones}`;
-                    obs.passed = true;
-                }
-
-                if (obs.x < -50) obstaculos.splice(i, 1);
-            }
-            
-            // Botón para salir
+            ctx.font = "20px Arial";
+            ctx.fillText("Siéntate cómodo y prepárate.", ANCHO/2, 220);
             ctx.fillStyle = "gray";
-            ctx.font = "14px Arial";
-            ctx.fillText("Presiona F5 para salir al menú", 20, 30);
+            ctx.fillText("Iniciando en 3 segundos...", ANCHO/2, 280);
+            
+            if (current_time - timer_calibracion > 3000) {
+                paso_calibracion = 1;
+                timer_calibracion = current_time;
+                buffer_calibracion = [];
+            }
+        } 
+        else if (paso_calibracion === 1) {
+            ctx.fillStyle = "#03DAC6";
+            ctx.font = "32px Arial bold";
+            ctx.fillText("FASE 1: RELAJACIÓN", ANCHO/2, 150);
+            ctx.fillStyle = "white";
+            ctx.font = "20px Arial";
+            ctx.fillText("Deja el brazo COMPLETAMENTE RELAJADO", ANCHO/2, 220);
+            
+            buffer_calibracion.push(valor_procesado);
+            let progreso = (current_time - timer_calibracion) / 3000;
+            
+            ctx.fillStyle = "white";
+            ctx.fillRect((ANCHO/2) - 200, 320, 400 * Math.min(progreso, 1), 20);
+
+            if (progreso >= 1) {
+                min_ruido = Math.max(...buffer_calibracion);
+                paso_calibracion = 2;
+                timer_calibracion = current_time;
+                buffer_calibracion = [];
+            }
         }
+        else if (paso_calibracion === 2) {
+            ctx.fillStyle = "#CF6679";
+            ctx.font = "32px Arial bold";
+            ctx.fillText("FASE 2: CONTRACCIÓN MÁXIMA", ANCHO/2, 150);
+            ctx.fillStyle = "white";
+            ctx.font = "24px Arial bold";
+            ctx.fillText("¡CONTRAE EL MÚSCULO AHORA!", ANCHO/2, 220);
+            
+            buffer_calibracion.push(valor_procesado);
+            let progreso = (current_time - timer_calibracion) / 3000;
+            
+            ctx.fillStyle = "white";
+            ctx.fillRect((ANCHO/2) - 200, 320, 400 * Math.min(progreso, 1), 20);
+
+            if (progreso >= 1) {
+                max_senal = Math.max(...buffer_calibracion);
+                let diferencia = max_senal - min_ruido;
+                // Cálculo de umbral idéntico a tu Python
+                umbral_calibrado = min_ruido + (diferencia * 0.25);
+                lblUmbral.innerText = umbral_calibrado.toFixed(1);
+                
+                paso_calibracion = 3;
+                timer_calibracion = current_time;
+            }
+        }
+        else if (paso_calibracion === 3) {
+            ctx.fillStyle = "#03DAC6";
+            ctx.font = "32px Arial bold";
+            ctx.fillText("¡CALIBRACIÓN EXITOSA!", ANCHO/2, 150);
+            ctx.fillStyle = "gray";
+            ctx.font = "20px Arial";
+            ctx.fillText(`Ruido Base: ${min_ruido.toFixed(1)} | Fuerza Máx: ${max_senal.toFixed(1)}`, ANCHO/2, 220);
+            ctx.fillStyle = "white";
+            ctx.font = "26px Arial bold";
+            ctx.fillText(`NUEVO UMBRAL: ${umbral_calibrado.toFixed(1)}`, ANCHO/2, 280);
+
+            if (current_time - timer_calibracion > 4000) {
+                mostrarMenuPrincipal();
+            }
+        }
+        ctx.textAlign = "left"; // Restaurar alineación
     }
 
-    // Volver a llamar al frame
+    // -----------------------------------------
+    // LÓGICA DEL JUEGO 1
+    // -----------------------------------------
+    else if (estado_actual === ESTADO_JUGANDO && modo_juego === 1) {
+        let suelo_y = ALTO - 200;
+
+        // Saltar si supera el umbral
+        if (valor_procesado > umbral_calibrado && player_y >= suelo_y && (current_time - last_jump_time) > 300) {
+            player_vel = jump_force;
+            last_jump_time = current_time;
+        }
+
+        // Físicas del jugador
+        player_vel += gravity;
+        player_y += player_vel;
+        if (player_y > suelo_y) {
+            player_y = suelo_y;
+            player_vel = 0;
+        }
+
+        // Dibujar Suelo
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, suelo_y, ANCHO, 3);
+
+        // Control de spawn de obstáculos (mucho más lento y controlado)
+        if (current_time - last_obstacle_time > 2500) { 
+            obstaculos.push({ x: ANCHO, y: suelo_y - 40, passed: false });
+            // Añade un tiempo aleatorio entre 0 y 1.5 segundos extras de espera
+            last_obstacle_time = current_time + (Math.random() * 1500); 
+        }
+
+        // Dibujar Jugador
+        ctx.beginPath();
+        ctx.arc(120, player_y - 20, 20, 0, Math.PI * 2);
+        ctx.fillStyle = "#BB86FC";
+        ctx.fill();
+        ctx.strokeStyle = "white";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Mover y dibujar obstáculos
+        for (let i = obstaculos.length - 1; i >= 0; i--) {
+            let obs = obstaculos[i];
+            obs.x -= 4.5; // Velocidad de movimiento drásticamente reducida (antes era 9)
+
+            ctx.beginPath();
+            ctx.moveTo(obs.x, obs.y + 40);
+            ctx.lineTo(obs.x + 20, obs.y);
+            ctx.lineTo(obs.x + 40, obs.y + 40);
+            ctx.closePath();
+            ctx.fillStyle = "#CF6679";
+            ctx.fill();
+
+            // Colisión
+            if (120 > obs.x && 100 < obs.x + 40 && player_y > obs.y + 10) {
+                alert(`¡Golpeaste un obstáculo! Repeticiones logradas: ${repeticiones}`);
+                mostrarMenuPrincipal();
+            }
+
+            // Puntaje
+            if (obs.x < 100 && !obs.passed) {
+                repeticiones++;
+                lblReps.innerText = `REPETICIONES: ${repeticiones}`;
+                obs.passed = true;
+            }
+
+            if (obs.x < -50) obstaculos.splice(i, 1);
+        }
+        
+        ctx.fillStyle = "gray";
+        ctx.font = "14px Arial";
+        ctx.fillText("Refresca la página (F5) para salir", 20, 30);
+    }
+
     requestAnimationFrame(loop);
 }
 
-// Iniciar el motor gráfico en vacío
 requestAnimationFrame(loop);
 
 // --- CONEXIÓN SERIAL WEB ---
@@ -226,5 +318,5 @@ async function leerDatos() {
             }
             buffer = lineas[lineas.length - 1];
         }
-    } catch (error) { console.error(error); } finally { reader.releaseLock(); }
+    } catch (error) {} finally { reader.releaseLock(); }
 }
