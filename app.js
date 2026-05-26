@@ -362,6 +362,7 @@ function registrarRepeticion() {
 function gameOver() {
     estado_actual = ESTADO_GAMEOVER;
     ctx.clearRect(0, 0, ANCHO, ALTO);
+    requestAnimationFrame(gameLoop);
 }
 
 // ================= RENDERS DE DIBUJO E INTERFAZ CANVASES =================
