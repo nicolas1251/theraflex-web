@@ -120,14 +120,14 @@ let obstacles = [];
 let timer_obstaculo = 0;
 
 // Juego 1
-let gravity_j1 = 1.0;       // Gravedad aumentada para evitar flotabilidad excesiva
-let jump_force_j1 = -18;   // Salto firme y controlable
+let gravity_j1 = 0.3;       // Gravedad lunar suave para salto floaty y lento
+let jump_force_j1 = -9;     // Fuerza de salto reducida para arco controlado de 1s
 let last_jump_time = 0;
 let prev_above_thresh = false; // Detección de flanco de subida (evita saltar continuamente)
 
 // Juego 2
-let gravity_j2 = 0.4;
-let lift_force_j2 = -0.9;
+let gravity_j2 = 0.15;      // Caída muy lenta y controlada
+let lift_force_j2 = -0.35;  // Elevación pausada y terapéutica
 let gap_height_j2 = 220;    // Hueco más grande para que sea fácil pasar
 
 // Juego 3
@@ -959,7 +959,7 @@ function gameLoop() {
             } else {
                 player_vel += gravity_j2;
             }
-            player_vel = Math.max(-6, Math.min(6, player_vel)); // Velocidad terminal muy moderada
+            player_vel = Math.max(-3, Math.min(3, player_vel)); // Velocidad terminal muy moderada
             player_y += player_vel;
             
             if (player_y < 0) {
