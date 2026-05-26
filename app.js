@@ -88,8 +88,29 @@ const emgBar = document.getElementById('emgBar');
 // Canvas
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const ANCHO = canvas.width;
-const ALTO = canvas.height;
+const ANCHO = 900;
+const ALTO = 520;
+
+let ultimoWidth = 0;
+let ultimoHeight = 0;
+
+function ajustarResolucionCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+    
+    const dpr = window.devicePixelRatio || 1;
+    
+    if (rect.width !== ultimoWidth || rect.height !== ultimoHeight) {
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        ultimoWidth = rect.width;
+        ultimoHeight = rect.height;
+    }
+    
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(dpr, dpr);
+    ctx.scale(rect.width / ANCHO, rect.height / ALTO);
+}
 
 // --- FÍSICAS DE LOS JUEGOS (Ajustes de dificultad) ---
 let player_x = 100;
@@ -131,10 +152,9 @@ document.getElementById('btnJuego3').addEventListener('click', () => iniciarInst
 // Clics en Canvas (Para simular los botones del Canvas de Python)
 canvas.addEventListener('click', (e) => {
     const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const clickX = (e.clientX - rect.left) * scaleX;
-    const clickY = (e.clientY - rect.top) * scaleY;
+    if (rect.width === 0 || rect.height === 0) return;
+    const clickX = (e.clientX - rect.left) * (ANCHO / rect.width);
+    const clickY = (e.clientY - rect.top) * (ALTO / rect.height);
 
     console.log(`Canvas Click: x=${clickX.toFixed(1)}, y=${clickY.toFixed(1)} | Estado:${estado_actual} Paso:${paso_calibracion}`);
 
@@ -182,10 +202,9 @@ canvas.addEventListener('click', (e) => {
 // Mostrar cursor pointer cuando se pasa sobre un botón
 canvas.addEventListener('mousemove', (e) => {
     const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const mouseX = (e.clientX - rect.left) * scaleX;
-    const mouseY = (e.clientY - rect.top) * scaleY;
+    if (rect.width === 0 || rect.height === 0) return;
+    const mouseX = (e.clientX - rect.left) * (ANCHO / rect.width);
+    const mouseY = (e.clientY - rect.top) * (ALTO / rect.height);
     
     let sobre_boton = false;
     
@@ -362,7 +381,6 @@ function registrarRepeticion() {
 function gameOver() {
     estado_actual = ESTADO_GAMEOVER;
     ctx.clearRect(0, 0, ANCHO, ALTO);
-    requestAnimationFrame(gameLoop);
 }
 
 // ================= RENDERS DE DIBUJO E INTERFAZ CANVASES =================
@@ -618,37 +636,57 @@ function animarInstrucciones() {
     }
 }
 
+// Capturador de errores global para diagnóstico visual directo
+window.addEventListener('error', (e) => {
+    console.error("ERROR GLOBAL DETECTADO:", e.error);
+    exponerErrorDOM(e.error || new Error(e.message));
+});
+
+function exponerErrorDOM(error) {
+    let errDiv = document.getElementById('debugErrorDiv');
+    if (!errDiv) {
+        errDiv = document.createElement('div');
+        errDiv.id = 'debugErrorDiv';
+        errDiv.style = "position:absolute; bottom:15px; left:15px; background:rgba(207,102,121,0.95); color:white; padding:15px; border-radius:8px; font-family:monospace; font-size:12px; z-index:99999; max-width:90%; border:1px solid rgba(255,255,255,0.2); box-shadow:0 10px 30px rgba(0,0,0,0.5); pointer-events:auto;";
+        document.body.appendChild(errDiv);
+    }
+    errDiv.innerHTML = `<strong style="color:#ff8a8a;font-size:13px;">Error en Ejecución:</strong><br>${error.message}<br><pre style="margin:5px 0 0 0;font-size:10px;opacity:0.8;max-height:100px;overflow-y:auto;">${error.stack || ''}</pre>`;
+}
+
 // ================= LOOP GRÁFICO 60 FPS =================
 
 function gameLoop() {
-    // Si estamos en modo demo, simular la señal usando la barra espaciadora
-    if (modo_demo) {
-        if (estado_actual === ESTADO_CALIBRACION) {
-            if (paso_calibracion === 1) {
-                valor_procesado = 2.0 + Math.random() * 0.5;
-            } else if (paso_calibracion === 2) {
-                valor_procesado = is_space_pressed ? (45.0 + Math.random() * 2.0) : (2.0 + Math.random() * 0.5);
+    try {
+        ajustarResolucionCanvas();
+
+        // Si estamos en modo demo, simular la señal usando la barra espaciadora
+        if (modo_demo) {
+            if (estado_actual === ESTADO_CALIBRACION) {
+                if (paso_calibracion === 1) {
+                    valor_procesado = 2.0 + Math.random() * 0.5;
+                } else if (paso_calibracion === 2) {
+                    valor_procesado = is_space_pressed ? (45.0 + Math.random() * 2.0) : (2.0 + Math.random() * 0.5);
+                } else {
+                    valor_procesado = is_space_pressed ? (umbral_calibrado + 15.0) : (min_ruido + 0.5);
+                }
             } else {
                 valor_procesado = is_space_pressed ? (umbral_calibrado + 15.0) : (min_ruido + 0.5);
             }
-        } else {
-            valor_procesado = is_space_pressed ? (umbral_calibrado + 15.0) : (min_ruido + 0.5);
         }
-    }
 
-    // Actualizar barra de señal EMG inferior
-    let escala = 120 / (max_senal - min_ruido + 1);
-    let ancho_barra = Math.min(120, Math.max(0, (valor_procesado - min_ruido) * escala));
-    emgBar.style.width = `${(ancho_barra / 120) * 100}%`;
-    
-    let color_led = valor_procesado > umbral_calibrado ? "#00FF00" : "#555555";
-    emgBar.style.background = valor_procesado > umbral_calibrado ? "var(--teal)" : "var(--muted)";
-    lblValor.innerText = valor_procesado.toFixed(1);
+        // Actualizar barra de señal EMG inferior
+        let escala = 120 / (max_senal - min_ruido + 1);
+        let ancho_barra = Math.min(120, Math.max(0, (valor_procesado - min_ruido) * escala));
+        emgBar.style.width = `${(ancho_barra / 120) * 100}%`;
+        
+        let color_led = valor_procesado > umbral_calibrado ? "#00FF00" : "#555555";
+        emgBar.style.background = valor_procesado > umbral_calibrado ? "var(--teal)" : "var(--muted)";
+        lblValor.innerText = valor_procesado.toFixed(1);
 
-    if (estado_actual === ESTADO_SPLASH) {
-        requestAnimationFrame(gameLoop);
-        return;
-    }
+        if (estado_actual === ESTADO_SPLASH) {
+            requestAnimationFrame(gameLoop);
+            return;
+        }
 
     // Cronómetro de la sesión
     if (estado_actual === ESTADO_JUGANDO || estado_actual === ESTADO_DESCANSO) {
@@ -899,7 +937,7 @@ function gameLoop() {
                 
                 if (hit) {
                     gameOver();
-                    return;
+                    break;
                 }
                 
                 // Puntaje
@@ -930,61 +968,62 @@ function gameLoop() {
             }
             if (player_y > ALTO - 80) {
                 gameOver();
-                return;
             }
             
-            // Dibujar Jugador
-            ctx.beginPath();
-            ctx.arc(120, player_y, 20, 0, Math.PI * 2);
-            ctx.fillStyle = "#00e5cc";
-            ctx.strokeStyle = "white";
-            ctx.lineWidth = 2;
-            ctx.fill();
-            ctx.stroke();
-            
-            // Obstáculos (Pilares dobles)
-            let now = Date.now();
-            if (now > timer_obstaculo) {
-                let gap_y = 100 + Math.random() * (ALTO - 350);
-                obstacles.push({ x: ANCHO, gap_y: gap_y, gap_h: gap_height_j2, passed: false });
-                timer_obstaculo = now + 4000; // Espaciado cómodo
-            }
-            
-            for (let i = obstacles.length - 1; i >= 0; i--) {
-                let obs = obstacles[i];
-                obs.x -= 2.0; // Velocidad pausada
-                
-                // Dibujar pilar superior
-                ctx.fillStyle = "#333333";
-                ctx.strokeStyle = "gray";
+            if (estado_actual === ESTADO_JUGANDO) {
+                // Dibujar Jugador
+                ctx.beginPath();
+                ctx.arc(120, player_y, 20, 0, Math.PI * 2);
+                ctx.fillStyle = "#00e5cc";
+                ctx.strokeStyle = "white";
                 ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.roundRect(obs.x, 0, 50, obs.gap_y, 4);
                 ctx.fill();
                 ctx.stroke();
                 
-                // Dibujar pilar inferior
-                ctx.beginPath();
-                ctx.roundRect(obs.x, obs.gap_y + obs.gap_h, 50, ALTO - (obs.gap_y + obs.gap_h), 4);
-                ctx.fill();
-                ctx.stroke();
-                
-                // Colisión (Hitbox indulgente)
-                let hit = 120 + 20 - 8 > obs.x && 
-                          120 - 20 + 8 < obs.x + 50 && 
-                          (player_y - 20 + 8 < obs.gap_y || player_y + 20 - 8 > obs.gap_y + obs.gap_h);
-                
-                if (hit) {
-                    gameOver();
-                    return;
+                // Obstáculos (Pilares dobles)
+                let now = Date.now();
+                if (now > timer_obstaculo) {
+                    let gap_y = 100 + Math.random() * (ALTO - 350);
+                    obstacles.push({ x: ANCHO, gap_y: gap_y, gap_h: gap_height_j2, passed: false });
+                    timer_obstaculo = now + 4000; // Espaciado cómodo
                 }
                 
-                if (obs.x < 120 && !obs.passed) {
-                    registrarRepeticion();
-                    obs.passed = true;
+                for (let i = obstacles.length - 1; i >= 0; i--) {
+                    let obs = obstacles[i];
+                    obs.x -= 2.0; // Velocidad pausada
+                    
+                    // Dibujar pilar superior
+                    ctx.fillStyle = "#333333";
+                    ctx.strokeStyle = "gray";
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.roundRect(obs.x, 0, 50, obs.gap_y, 4);
+                    ctx.fill();
+                    ctx.stroke();
+                    
+                    // Dibujar pilar inferior
+                    ctx.beginPath();
+                    ctx.roundRect(obs.x, obs.gap_y + obs.gap_h, 50, ALTO - (obs.gap_y + obs.gap_h), 4);
+                    ctx.fill();
+                    ctx.stroke();
+                    
+                    // Colisión (Hitbox indulgente)
+                    let hit = 120 + 20 - 8 > obs.x && 
+                              120 - 20 + 8 < obs.x + 50 && 
+                              (player_y - 20 + 8 < obs.gap_y || player_y + 20 - 8 > obs.gap_y + obs.gap_h);
+                    
+                    if (hit) {
+                        gameOver();
+                        break;
+                    }
+                    
+                    if (obs.x < 120 && !obs.passed) {
+                        registrarRepeticion();
+                        obs.passed = true;
+                    }
+                    
+                    if (obs.x < -60) obstacles.splice(i, 1);
                 }
-                
-                if (obs.x < -60) obstacles.splice(i, 1);
             }
         } 
         
@@ -1051,6 +1090,11 @@ function gameLoop() {
         
         dibujarBotonGenerico(ANCHO/2, ALTO/2 + 50, "REINICIAR EJERCICIO", "white");
         dibujarBotonGenerico(ANCHO/2, ALTO/2 + 130, "MENÚ PRINCIPAL", "#bb86fc");
+    }
+
+    } catch (e) {
+        console.error("ERROR EN GAMELOOP:", e);
+        exponerErrorDOM(e);
     }
 
     requestAnimationFrame(gameLoop);
