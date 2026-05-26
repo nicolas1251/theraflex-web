@@ -13,7 +13,6 @@ class SignalProcessor {
         let val = parseFloat(raw_val);
         if (isNaN(val)) return 0.0;
 
-        // Filtro y remoción de offset (igual que en tu Python)
         this.dc_offset = (1.0 - this.alpha_dc) * this.dc_offset + this.alpha_dc * val;
         let ac_val = val - this.dc_offset;
         this.v_out = 0.5 * (ac_val + this.v_prev);
@@ -22,10 +21,9 @@ class SignalProcessor {
         let rectified = Math.abs(this.v_out);
         let amplified = rectified * 1.5;
 
-        // Lógica del deque (promedio móvil)
         this.promedio_movil.push(amplified);
         if (this.promedio_movil.length > this.max_len) {
-            this.promedio_movil.shift(); // Elimina el elemento más viejo
+            this.promedio_movil.shift(); 
         }
 
         let suma = this.promedio_movil.reduce((a, b) => a + b, 0);
@@ -33,43 +31,66 @@ class SignalProcessor {
     }
 }
 
-// --- CONEXIÓN SERIAL WEB ---
+// --- VARIABLES GLOBALES Y DOM ---
 let port;
 let reader;
 const dsp = new SignalProcessor();
 
-// Referencias a la interfaz HTML
+// Referencias a Pantallas
+const splashDiv = document.getElementById('splashDiv');
+const menuDiv = document.getElementById('menuDiv');
+const gameDiv = document.getElementById('gameDiv');
+const topBar = document.getElementById('topBar');
+
+// Referencias a UI
 const btnConectar = document.getElementById('btnConectar');
 const lblStatus = document.getElementById('lblStatus');
 const lblValor = document.getElementById('lblValor');
 
+// Variables de Terapia
+let min_ruido = 0.0;
+let max_senal = 50.0;
+let umbral_calibrado = 10.0;
+let valor_procesado = 0.0;
+
+// --- GESTIÓN DE PANTALLAS ---
+function mostrarMenuPrincipal() {
+    splashDiv.style.display = "none";
+    gameDiv.style.display = "none";
+    
+    topBar.style.display = "block";
+    menuDiv.style.display = "block";
+}
+
+// Lógica de clics en el menú (Por ahora solo imprimen en consola)
+document.getElementById('btnCalibrar').addEventListener('click', () => { console.log("Iniciar Calibración"); });
+document.getElementById('btnJuego1').addEventListener('click', () => { console.log("Iniciar Juego 1"); });
+document.getElementById('btnJuego2').addEventListener('click', () => { console.log("Iniciar Juego 2"); });
+document.getElementById('btnJuego3').addEventListener('click', () => { console.log("Iniciar Juego 3"); });
+
+// --- CONEXIÓN SERIAL WEB ---
 btnConectar.addEventListener('click', async () => {
     try {
-        // 1. Abre el pop-up del navegador pidiendo permiso para usar el USB
         port = await navigator.serial.requestPort();
-        
-        // 2. Abre la conexión a los mismos baudios de tu Arduino
         await port.open({ baudRate: 9600 });
         
         lblStatus.innerText = "SENSOR CONECTADO";
         lblStatus.style.color = "#03DAC6";
-        btnConectar.style.display = "none"; // Ocultar botón al conectar
-
-        // 3. Inicia el ciclo de lectura
+        
+        // ¡Cambiamos de pantalla automáticamente al conectar!
+        mostrarMenuPrincipal();
         leerDatos();
+
     } catch (err) {
         lblStatus.innerText = "ERROR AL CONECTAR";
         lblStatus.style.color = "#CF6679";
-        console.error("Hubo un error o el usuario canceló:", err);
     }
 });
 
 async function leerDatos() {
-    // Configuramos un decodificador para convertir los datos raw a texto (strings)
     const textDecoder = new TextDecoderStream();
     const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
     reader = textDecoder.readable.getReader();
-
     let buffer = "";
 
     try {
@@ -80,23 +101,19 @@ async function leerDatos() {
             buffer += value;
             let lineas = buffer.split('\n');
 
-            // Procesamos todas las líneas completas recibidas
             for (let i = 0; i < lineas.length - 1; i++) {
                 let raw_string = lineas[i].trim();
-                
                 if (raw_string.length > 0 && !isNaN(raw_string)) {
-                    // Pasamos el dato por el procesador DSP
-                    let valor_procesado = dsp.procesar(raw_string);
                     
-                    // Actualizamos la interfaz HTML en tiempo real
+                    valor_procesado = dsp.procesar(raw_string);
                     lblValor.innerText = valor_procesado.toFixed(1);
+                    
                 }
             }
-            // Guardamos el fragmento incompleto para la próxima iteración
             buffer = lineas[lineas.length - 1];
         }
     } catch (error) {
-        console.error("Error leyendo los datos del puerto:", error);
+        console.error("Error leyendo:", error);
     } finally {
         reader.releaseLock();
     }
