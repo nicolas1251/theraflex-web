@@ -131,8 +131,10 @@ document.getElementById('btnJuego3').addEventListener('click', () => iniciarInst
 // Clics en Canvas (Para simular los botones del Canvas de Python)
 canvas.addEventListener('click', (e) => {
     const rect = canvas.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const clickY = e.clientY - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const clickX = (e.clientX - rect.left) * scaleX;
+    const clickY = (e.clientY - rect.top) * scaleY;
 
     if (estado_actual === ESTADO_CALIBRACION) {
         if (paso_calibracion === 0) {
