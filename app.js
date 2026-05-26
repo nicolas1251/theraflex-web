@@ -932,7 +932,6 @@ function animarInstrucciones() {
         ctx.fillText(`TENSIÓN MUSCULAR: ${Math.floor(t * 100)}%`, cx, cy + 135);
     }
 }
-}
 
 // Capturador de errores global para diagnóstico visual directo
 window.addEventListener('error', (e) => {
