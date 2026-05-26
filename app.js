@@ -71,6 +71,7 @@ let buffer_calibracion = [];
 let repeticiones = 0;
 let inicio_sesion = 0;
 let tiempo_fin_descanso = 0;
+let tiempo_ultimo_frame = Date.now();
 
 // Referencias DOM
 const splashDiv = document.getElementById('splashDiv');
@@ -120,14 +121,14 @@ let obstacles = [];
 let timer_obstaculo = 0;
 
 // Juego 1
-let gravity_j1 = 0.3;       // Gravedad lunar suave para salto floaty y lento
-let jump_force_j1 = -9;     // Fuerza de salto reducida para arco controlado de 1s
+let gravity_j1 = 0.15;      // Gravedad lunar suave para salto floaty y lento (1.4s en el aire)
+let jump_force_j1 = -6.5;   // Fuerza de salto reducida para arco controlado
 let last_jump_time = 0;
 let prev_above_thresh = false; // Detección de flanco de subida (evita saltar continuamente)
 
 // Juego 2
-let gravity_j2 = 0.15;      // Caída muy lenta y controlada
-let lift_force_j2 = -0.35;  // Elevación pausada y terapéutica
+let gravity_j2 = 0.08;      // Caída extremadamente lenta y controlada
+let lift_force_j2 = -0.20;  // Elevación muy pausada y terapéutica
 let gap_height_j2 = 220;    // Hueco más grande para que sea fácil pasar
 
 // Juego 3
@@ -658,6 +659,11 @@ function exponerErrorDOM(error) {
 function gameLoop() {
     try {
         ajustarResolucionCanvas();
+        
+        let current_time = Date.now();
+        let dt = (current_time - tiempo_ultimo_frame) / 16.667;
+        tiempo_ultimo_frame = current_time;
+        if (dt > 3) dt = 3; // Evitar saltos si se congela la pestaña
 
         // Si estamos en modo demo, simular la señal usando la barra espaciadora
         if (modo_demo) {
@@ -884,8 +890,8 @@ function gameLoop() {
                 last_jump_time = now;
             }
             
-            player_vel += gravity_j1;
-            player_y += player_vel;
+            player_vel += gravity_j1 * dt;
+            player_y += player_vel * dt;
             if (player_y > suelo_y) {
                 player_y = suelo_y;
                 player_vel = 0;
@@ -916,7 +922,7 @@ function gameLoop() {
             
             for (let i = obstacles.length - 1; i >= 0; i--) {
                 let obs = obstacles[i];
-                obs.x -= 3.0; // Velocidad de obstáculo lenta y terapéutica
+                obs.x -= 3.0 * dt; // Velocidad de obstáculo lenta y terapéutica y con dt
                 
                 // Dibujar obstáculo
                 ctx.beginPath();
@@ -955,12 +961,12 @@ function gameLoop() {
             let is_above = valor_procesado > umbral_calibrado;
             
             if (is_above) {
-                player_vel += lift_force_j2;
+                player_vel += lift_force_j2 * dt;
             } else {
-                player_vel += gravity_j2;
+                player_vel += gravity_j2 * dt;
             }
             player_vel = Math.max(-3, Math.min(3, player_vel)); // Velocidad terminal muy moderada
-            player_y += player_vel;
+            player_y += player_vel * dt;
             
             if (player_y < 0) {
                 player_y = 0;
@@ -990,7 +996,7 @@ function gameLoop() {
                 
                 for (let i = obstacles.length - 1; i >= 0; i--) {
                     let obs = obstacles[i];
-                    obs.x -= 2.0; // Velocidad pausada
+                    obs.x -= 2.0 * dt; // Velocidad pausada con dt
                     
                     // Dibujar pilar superior
                     ctx.fillStyle = "#333333";
