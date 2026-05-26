@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>TheraFlex Web</title>
+    <style>
+        body { background-color: #121212; color: white; font-family: Arial, sans-serif; text-align: center; padding-top: 50px; }
+        #btnConectar { background-color: #BB86FC; border: none; padding: 15px 30px; font-size: 18px; font-weight: bold; cursor: pointer; border-radius: 5px;}
+        #btnConectar:hover { background-color: #9965f4; }
+    </style>
+</head>
+<body>
+
+    <h1>THERAFLEX EMG</h1>
+    <button id="btnConectar">🔌 CONECTAR SENSOR</button>
+    
+    <h3 id="lblStatus" style="color: #CF6679;">Estado: Esperando conexión...</h3>
+    <h2 style="color: #03DAC6;">Intensidad DSP: <span id="lblValor">0.0</span></h2>
+
+    <script src="app.js"></script>
+</body>
+</html>
