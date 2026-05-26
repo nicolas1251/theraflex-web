@@ -4,18 +4,86 @@
     <meta charset="UTF-8">
     <title>TheraFlex Web</title>
     <style>
-        body { background-color: #121212; color: white; font-family: Arial, sans-serif; text-align: center; padding-top: 50px; }
-        #btnConectar { background-color: #BB86FC; border: none; padding: 15px 30px; font-size: 18px; font-weight: bold; cursor: pointer; border-radius: 5px;}
-        #btnConectar:hover { background-color: #9965f4; }
+        body { background-color: #121212; color: white; font-family: Arial, sans-serif; text-align: center; margin: 0; overflow: hidden; }
+        
+        /* Barra superior e inferior */
+        #topBar { background-color: #1F1B24; padding: 10px; font-weight: bold; font-size: 18px; display: none; }
+        #bottomBar { background-color: #1F1B24; padding: 15px; position: fixed; bottom: 0; width: 100%; display: flex; justify-content: space-around; align-items: center; }
+
+        /* Contenedor central */
+        #mainContainer { position: relative; width: 900px; height: 600px; margin: 20px auto; background-color: #121212; }
+        
+        /* Pantallas (Se ocultan o muestran con JS) */
+        #splashDiv, #menuDiv, #gameDiv { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; }
+        
+        /* Estilos de botones del menú */
+        .btn-menu { background-color: #1F1B24; border: 2px solid; border-radius: 8px; padding: 15px; margin: 10px auto; width: 80%; cursor: pointer; transition: transform 0.2s, background-color 0.2s; }
+        .btn-menu h2 { margin: 0 0 5px 0; font-size: 20px; }
+        .btn-menu p { margin: 0; font-size: 14px; color: gray; }
+        .btn-menu:hover { background-color: #2a2a2a; transform: scale(1.02); }
+
+        #btnCalibrar { border-color: #FF9800; }
+        #btnCalibrar h2 { color: #FF9800; }
+        #btnJuego1 { border-color: #BB86FC; }
+        #btnJuego1 h2 { color: #BB86FC; }
+        #btnJuego2 { border-color: #03DAC6; }
+        #btnJuego2 h2 { color: #03DAC6; }
+        #btnJuego3 { border-color: #CF6679; }
+        #btnJuego3 h2 { color: #CF6679; }
+
+        /* Lienzo para los juegos y el holograma */
+        canvas { background-color: #121212; border: 1px solid #333; }
     </style>
 </head>
 <body>
-
-    <h1>THERAFLEX EMG</h1>
-    <button id="btnConectar">🔌 CONECTAR SENSOR</button>
     
-    <h3 id="lblStatus" style="color: #CF6679;">Estado: Esperando conexión...</h3>
-    <h2 style="color: #03DAC6;">Intensidad DSP: <span id="lblValor">0.0</span></h2>
+    <div id="topBar">
+        <span id="lblTimer" style="float:left; margin-left:20px;">TIEMPO: 00:00</span>
+        <span id="lblReps" style="float:right; color:#BB86FC; margin-right:20px;">REPETICIONES: 0</span>
+        <div style="clear: both;"></div>
+    </div>
+
+    <div id="mainContainer">
+        
+        <div id="splashDiv" style="display: block; padding-top: 150px;">
+            <h1 style="font-size: 48px; letter-spacing: 5px;">T H E R A F L E X</h1>
+            <button id="btnConectar" style="background-color: #03DAC6; color: #121212; border: none; padding: 15px 30px; font-size: 18px; font-weight: bold; cursor: pointer; border-radius: 5px; margin-top: 40px;">🔌 CONECTAR SENSOR</button>
+        </div>
+
+        <div id="menuDiv" style="padding-top: 20px;">
+            <h1 style="font-size: 38px; margin-bottom: 20px;">THERAFLEX</h1>
+            
+            <div class="btn-menu" id="btnCalibrar">
+                <h2>⚙️ CALIBRAR SENSOR</h2>
+            </div>
+            
+            <div class="btn-menu" id="btnJuego1">
+                <h2>1. COORDINACIÓN MOTRIZ</h2>
+                <p>Secuencia de dedos. Objetivo: Control de pulsaciones cortas (saltos).</p>
+            </div>
+            <div class="btn-menu" id="btnJuego2">
+                <h2>2. APERTURA SOSTENIDA</h2>
+                <p>Abrir y cerrar mano. Objetivo: Mantener contracción media (esquivar).</p>
+            </div>
+            <div class="btn-menu" id="btnJuego3">
+                <h2>3. FUERZA ISOMÉTRICA</h2>
+                <p>Tensión muscular al máximo. Objetivo: Llenar barra de energía.</p>
+            </div>
+            
+            <p id="lblCalibracion" style="color: gray; margin-top: 20px; font-size: 12px;">Calibración Actual -> Reposo: 0.0 | Máx: 50.0 | Umbral: 10.0</p>
+        </div>
+
+        <div id="gameDiv">
+            <canvas id="gameCanvas" width="900" height="600"></canvas>
+        </div>
+
+    </div>
+
+    <div id="bottomBar">
+        <span id="lblStatus" style="color: yellow;">Esperando conexión...</span>
+        <span style="color: white;">Umbral: <span id="lblUmbral">--</span></span>
+        <span style="color: #03DAC6; font-weight: bold;">Intensidad DSP: <span id="lblValor" style="font-size: 20px;">0.0</span></span>
+    </div>
 
     <script src="app.js"></script>
 </body>
