@@ -22,30 +22,33 @@ class SignalProcessor {
         let amplified = rectified * 1.5;
 
         this.promedio_movil.push(amplified);
-        if (this.promedio_movil.length > this.max_len) {
-            this.promedio_movil.shift(); 
-        }
-
+        if (this.promedio_movil.length > this.max_len) this.promedio_movil.shift(); 
+        
         let suma = this.promedio_movil.reduce((a, b) => a + b, 0);
         return suma / this.promedio_movil.length;
     }
 }
 
 // --- VARIABLES GLOBALES Y DOM ---
-let port;
-let reader;
+let port, reader;
 const dsp = new SignalProcessor();
 
-// Referencias a Pantallas
+// UI Elements
 const splashDiv = document.getElementById('splashDiv');
 const menuDiv = document.getElementById('menuDiv');
 const gameDiv = document.getElementById('gameDiv');
 const topBar = document.getElementById('topBar');
-
-// Referencias a UI
 const btnConectar = document.getElementById('btnConectar');
 const lblStatus = document.getElementById('lblStatus');
 const lblValor = document.getElementById('lblValor');
+const lblUmbral = document.getElementById('lblUmbral');
+const lblReps = document.getElementById('lblReps');
+
+// Canvas Setup
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const ANCHO = canvas.width;
+const ALTO = canvas.height;
 
 // Variables de Terapia
 let min_ruido = 0.0;
@@ -53,34 +56,150 @@ let max_senal = 50.0;
 let umbral_calibrado = 10.0;
 let valor_procesado = 0.0;
 
+// Estados del Juego
+const ESTADO_MENU = 0, ESTADO_CALIBRACION = 1, ESTADO_JUGANDO = 2;
+let estado_actual = ESTADO_MENU;
+let modo_juego = null;
+let repeticiones = 0;
+
+// Físicas (Juego 1)
+let player_y = ALTO - 200;
+let player_vel = 0;
+const gravity = 1.2;
+const jump_force = -22;
+let obstaculos = [];
+let last_jump_time = 0;
+
 // --- GESTIÓN DE PANTALLAS ---
 function mostrarMenuPrincipal() {
+    estado_actual = ESTADO_MENU;
     splashDiv.style.display = "none";
     gameDiv.style.display = "none";
-    
     topBar.style.display = "block";
     menuDiv.style.display = "block";
+    document.getElementById('lblCalibracion').innerText = `Calibración Actual -> Reposo: ${min_ruido.toFixed(1)} | Máx: ${max_senal.toFixed(1)} | Umbral: ${umbral_calibrado.toFixed(1)}`;
 }
 
-// Lógica de clics en el menú (Por ahora solo imprimen en consola)
-document.getElementById('btnCalibrar').addEventListener('click', () => { console.log("Iniciar Calibración"); });
-document.getElementById('btnJuego1').addEventListener('click', () => { console.log("Iniciar Juego 1"); });
-document.getElementById('btnJuego2').addEventListener('click', () => { console.log("Iniciar Juego 2"); });
-document.getElementById('btnJuego3').addEventListener('click', () => { console.log("Iniciar Juego 3"); });
+function iniciarJuego(modo) {
+    modo_juego = modo;
+    estado_actual = ESTADO_JUGANDO;
+    repeticiones = 0;
+    player_y = ALTO - 200;
+    player_vel = 0;
+    obstaculos = [];
+    lblReps.innerText = `REPETICIONES: ${repeticiones}`;
+    
+    menuDiv.style.display = "none";
+    gameDiv.style.display = "block";
+}
+
+// Eventos de Botones
+document.getElementById('btnCalibrar').addEventListener('click', () => { 
+    // Calibración rápida simulada (para esta prueba)
+    min_ruido = 2.0; 
+    max_senal = 80.0;
+    umbral_calibrado = 20.0; 
+    lblUmbral.innerText = umbral_calibrado.toFixed(1);
+    mostrarMenuPrincipal();
+    alert("Sensor Calibrado (Umbral ajustado a 20.0)");
+});
+document.getElementById('btnJuego1').addEventListener('click', () => iniciarJuego(1));
+
+// --- MOTOR GRÁFICO (El reemplazo de game_loop de Tkinter) ---
+function loop() {
+    // 1. Limpiar el lienzo en cada frame
+    ctx.clearRect(0, 0, ANCHO, ALTO);
+
+    if (estado_actual === ESTADO_JUGANDO) {
+        if (modo_juego === 1) {
+            let suelo_y = ALTO - 200;
+            let current_time = Date.now();
+
+            // Lógica de Salto accionada por EMG
+            if (valor_procesado > umbral_calibrado && player_y >= suelo_y && (current_time - last_jump_time) > 300) {
+                player_vel = jump_force;
+                last_jump_time = current_time;
+            }
+
+            // Aplicar gravedad
+            player_vel += gravity;
+            player_y += player_vel;
+            if (player_y > suelo_y) {
+                player_y = suelo_y;
+                player_vel = 0;
+            }
+
+            // Dibujar Suelo
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, suelo_y, ANCHO, 3);
+
+            // Generar Obstáculos
+            if (Math.random() < 0.015) { // Probabilidad de generar obstáculo por frame
+                obstaculos.push({ x: ANCHO, y: suelo_y - 40, passed: false });
+            }
+
+            // Dibujar Jugador (Equivalente a create_oval de Tkinter)
+            ctx.beginPath();
+            ctx.arc(120, player_y - 20, 20, 0, Math.PI * 2);
+            ctx.fillStyle = "#BB86FC";
+            ctx.fill();
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Mover y dibujar obstáculos
+            for (let i = obstaculos.length - 1; i >= 0; i--) {
+                let obs = obstaculos[i];
+                obs.x -= 9; // Velocidad del obstáculo
+
+                // Dibujar obstáculo (Equivalente a create_polygon triangular)
+                ctx.beginPath();
+                ctx.moveTo(obs.x, obs.y + 40);
+                ctx.lineTo(obs.x + 20, obs.y);
+                ctx.lineTo(obs.x + 40, obs.y + 40);
+                ctx.closePath();
+                ctx.fillStyle = "#CF6679";
+                ctx.fill();
+
+                // Colisiones básicas
+                if (120 > obs.x && 100 < obs.x + 40 && player_y > obs.y + 10) {
+                    alert(`¡Fin del juego! Repeticiones: ${repeticiones}`);
+                    mostrarMenuPrincipal();
+                }
+
+                // Puntaje
+                if (obs.x < 100 && !obs.passed) {
+                    repeticiones++;
+                    lblReps.innerText = `REPETICIONES: ${repeticiones}`;
+                    obs.passed = true;
+                }
+
+                if (obs.x < -50) obstaculos.splice(i, 1);
+            }
+            
+            // Botón para salir
+            ctx.fillStyle = "gray";
+            ctx.font = "14px Arial";
+            ctx.fillText("Presiona F5 para salir al menú", 20, 30);
+        }
+    }
+
+    // Volver a llamar al frame
+    requestAnimationFrame(loop);
+}
+
+// Iniciar el motor gráfico en vacío
+requestAnimationFrame(loop);
 
 // --- CONEXIÓN SERIAL WEB ---
 btnConectar.addEventListener('click', async () => {
     try {
         port = await navigator.serial.requestPort();
         await port.open({ baudRate: 9600 });
-        
         lblStatus.innerText = "SENSOR CONECTADO";
         lblStatus.style.color = "#03DAC6";
-        
-        // ¡Cambiamos de pantalla automáticamente al conectar!
         mostrarMenuPrincipal();
         leerDatos();
-
     } catch (err) {
         lblStatus.innerText = "ERROR AL CONECTAR";
         lblStatus.style.color = "#CF6679";
@@ -92,29 +211,20 @@ async function leerDatos() {
     const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
     reader = textDecoder.readable.getReader();
     let buffer = "";
-
     try {
         while (true) {
             const { value, done } = await reader.read();
             if (done) break;
-
             buffer += value;
             let lineas = buffer.split('\n');
-
             for (let i = 0; i < lineas.length - 1; i++) {
                 let raw_string = lineas[i].trim();
                 if (raw_string.length > 0 && !isNaN(raw_string)) {
-                    
                     valor_procesado = dsp.procesar(raw_string);
                     lblValor.innerText = valor_procesado.toFixed(1);
-                    
                 }
             }
             buffer = lineas[lineas.length - 1];
         }
-    } catch (error) {
-        console.error("Error leyendo:", error);
-    } finally {
-        reader.releaseLock();
-    }
+    } catch (error) { console.error(error); } finally { reader.releaseLock(); }
 }
