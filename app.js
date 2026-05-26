@@ -113,8 +113,16 @@ let gap_height_j2 = 220;    // Hueco más grande para que sea fácil pasar
 let nivel_carga = 0;
 let max_carga = 100;
 
+let modo_demo = false;
+let is_space_pressed = false;
+
 // --- CONFIGURACIÓN DE BOTONES Y EVENTOS ---
 btnConectar.addEventListener('click', conectarSerial);
+const btnDemo = document.getElementById('btnDemo');
+if (btnDemo) {
+    btnDemo.addEventListener('click', iniciarModoDemo);
+}
+
 document.getElementById('btnCalibrar').addEventListener('click', iniciarCalibracion);
 document.getElementById('btnJuego1').addEventListener('click', () => iniciarInstrucciones(1));
 document.getElementById('btnJuego2').addEventListener('click', () => iniciarInstrucciones(2));
@@ -138,6 +146,11 @@ canvas.addEventListener('click', (e) => {
             if (clickX > ANCHO/2 - 150 && clickX < ANCHO/2 + 150 && clickY > 395 && clickY < 445) {
                 mostrarMenuPrincipal();
             }
+        } else if (paso_calibracion === 4) {
+            // Botón REINTENTAR
+            if (clickX > ANCHO/2 - 150 && clickX < ANCHO/2 + 150 && clickY > 325 && clickY < 375) {
+                iniciarCalibracion();
+            }
         }
     } else if (estado_actual === ESTADO_INSTRUCCIONES) {
         // Botón COMENZAR TERAPIA
@@ -156,10 +169,21 @@ canvas.addEventListener('click', (e) => {
     }
 });
 
-// ESC para volver al menú
+// Teclado: Simulación de Señal con Barra Espaciadora + ESC para volver
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && (estado_actual === ESTADO_JUGANDO || estado_actual === ESTADO_INSTRUCCIONES || estado_actual === ESTADO_DESCANSO)) {
         mostrarMenuPrincipal();
+    }
+    if (e.code === 'Space') {
+        is_space_pressed = true;
+        e.preventDefault(); // Evitar scroll de la página
+    }
+});
+
+document.addEventListener('keyup', (e) => {
+    if (e.code === 'Space') {
+        is_space_pressed = false;
+        e.preventDefault();
     }
 });
 
@@ -171,27 +195,19 @@ function mostrarSplash() {
     menuDiv.style.display = "none";
     gameDiv.style.display = "none";
     topBar.style.display = "none";
-    
-    frame_animacion = 0;
-    animarSplash();
-}
-
-function animarSplash() {
-    if (estado_actual !== ESTADO_SPLASH) return;
-    
-    // El HTML ya maneja la visualización premium del splash
-    frame_animacion++;
-    if (frame_animacion > 120) {
-        terminarSplash();
-    } else {
-        requestAnimationFrame(animarSplash);
-    }
 }
 
 function terminarSplash() {
     splashDiv.style.display = "none";
     topBar.style.display = "flex";
     mostrarMenuPrincipal();
+}
+
+function iniciarModoDemo() {
+    modo_demo = true;
+    lblStatus.innerText = "DEMO (Usa Barra Espaciadora)";
+    lblStatus.style.color = "yellow";
+    terminarSplash();
 }
 
 function mostrarMenuPrincipal() {
@@ -566,6 +582,21 @@ function animarInstrucciones() {
 // ================= LOOP GRÁFICO 60 FPS =================
 
 function gameLoop() {
+    // Si estamos en modo demo, simular la señal usando la barra espaciadora
+    if (modo_demo) {
+        if (estado_actual === ESTADO_CALIBRACION) {
+            if (paso_calibracion === 1) {
+                valor_procesado = 2.0 + Math.random() * 0.5;
+            } else if (paso_calibracion === 2) {
+                valor_procesado = is_space_pressed ? (45.0 + Math.random() * 2.0) : (2.0 + Math.random() * 0.5);
+            } else {
+                valor_procesado = is_space_pressed ? (umbral_calibrado + 15.0) : (min_ruido + 0.5);
+            }
+        } else {
+            valor_procesado = is_space_pressed ? (umbral_calibrado + 15.0) : (min_ruido + 0.5);
+        }
+    }
+
     // Actualizar barra de señal EMG inferior
     let escala = 120 / (max_senal - min_ruido + 1);
     let ancho_barra = Math.min(120, Math.max(0, (valor_procesado - min_ruido) * escala));
