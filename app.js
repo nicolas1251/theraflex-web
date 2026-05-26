@@ -274,6 +274,74 @@ let player_vel = 0;
 let obstacles = [];
 let timer_obstaculo = 0;
 
+// --- SPRITES EXTRAS (BIRD, SAIYAN Y NAVE) ---
+const BIRD_SPRITE = [
+    [0,0,0,0,3,3,3,3,3,3,0,0],
+    [0,0,0,3,1,1,1,3,2,2,3,0],
+    [0,0,3,1,1,1,3,2,2,3,3,3],
+    [0,3,1,1,1,1,3,2,3,3,4,3],
+    [3,5,1,1,1,1,1,3,3,4,4,3],
+    [3,5,5,1,1,1,1,1,3,4,3,0],
+    [0,3,5,5,5,1,1,1,3,3,0,0],
+    [0,0,3,3,5,5,5,5,3,0,0,0],
+    [0,0,0,0,3,3,3,3,0,0,0,0]
+];
+
+const HERO_BASE = [
+    [0,0,0,1,1,1,1,0,0,0,0,0],
+    [0,0,1,1,1,1,1,1,0,0,0,0],
+    [0,0,1,1,2,2,1,1,0,0,0,0],
+    [0,0,0,2,2,2,2,0,0,0,0,0],
+    [0,0,0,2,1,2,1,0,0,0,0,0],
+    [0,0,0,2,2,2,2,0,0,0,0,0],
+    [0,0,4,3,3,3,3,4,0,0,0,0],
+    [0,4,4,3,4,4,3,4,4,0,0,0],
+    [4,4,4,3,4,4,3,4,4,4,0,0],
+    [0,0,4,3,3,3,3,4,0,0,0,0],
+    [0,0,0,4,4,4,4,0,0,0,0,0],
+    [0,0,3,3,0,0,3,3,0,0,0,0],
+    [0,0,3,3,0,0,3,3,0,0,0,0],
+    [0,0,4,4,0,0,4,4,0,0,0,0],
+    [0,4,4,4,0,0,4,4,4,0,0,0]
+];
+
+const HERO_SUPER = [
+    [0,0,1,0,1,1,0,1,0,0,0,0],
+    [0,1,1,1,1,1,1,1,1,0,0,0],
+    [0,1,1,1,2,2,1,1,1,0,0,0],
+    [0,0,1,2,2,2,2,1,0,0,0,0],
+    [0,0,0,2,1,2,1,0,0,0,0,0],
+    [0,0,0,2,2,2,2,0,0,0,0,0],
+    [0,0,4,3,3,3,3,4,0,0,0,0],
+    [0,4,4,3,4,4,3,4,4,0,0,0],
+    [4,4,4,3,4,4,3,4,4,4,0,0],
+    [0,0,4,3,3,3,3,4,0,0,0,0],
+    [0,0,0,4,4,4,4,0,0,0,0,0],
+    [0,0,3,3,0,0,3,3,0,0,0,0],
+    [0,0,3,3,0,0,3,3,0,0,0,0],
+    [0,0,4,4,0,0,4,4,0,0,0,0],
+    [0,4,4,4,0,0,4,4,4,0,0,0]
+];
+
+const SPACESHIP_SPRITE = [
+    [0,0,0,0,0,1,1,0,0,0,0,0],
+    [0,0,0,0,1,4,4,1,0,0,0,0],
+    [0,0,0,0,1,4,4,1,0,0,0,0],
+    [0,0,0,1,1,1,1,1,1,0,0,0],
+    [0,0,1,1,2,1,1,2,1,1,0,0],
+    [0,1,1,1,2,1,1,2,1,1,1,0],
+    [1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,3,1,1,3,1,1,1,1],
+    [0,0,0,0,3,3,3,3,0,0,0,0]
+];
+
+// Variables añadidas para Juego 4 y estrellas
+let lasers = [];
+let explosions = [];
+let stars = [];
+let repeticiones_acumuladas = 0;
+let last_laser_time = 0;
+
 // Juego 1
 let gravity_j1 = 0.15;      // Gravedad lunar suave para salto floaty y lento (1.4s en el aire)
 let jump_force_j1 = -6.5;   // Fuerza de salto reducida para arco controlado
@@ -303,6 +371,7 @@ document.getElementById('btnCalibrar').addEventListener('click', iniciarCalibrac
 document.getElementById('btnJuego1').addEventListener('click', () => iniciarInstrucciones(1));
 document.getElementById('btnJuego2').addEventListener('click', () => iniciarInstrucciones(2));
 document.getElementById('btnJuego3').addEventListener('click', () => iniciarInstrucciones(3));
+document.getElementById('btnJuego4').addEventListener('click', () => iniciarInstrucciones(4));
 
 // Clics en Canvas (Para simular los botones del Canvas de Python)
 canvas.addEventListener('click', (e) => {
@@ -520,6 +589,20 @@ function iniciarPartida() {
         player_y = 200;
     } else if (modo_juego === 3) {
         nivel_carga = 0;
+    } else if (modo_juego === 4) {
+        lasers = [];
+        explosions = [];
+        repeticiones_acumuladas = 0;
+        last_laser_time = 0;
+        stars = [];
+        for (let i = 0; i < 40; i++) {
+            stars.push({
+                x: Math.random() * ANCHO,
+                y: Math.random() * ALTO,
+                size: 1 + Math.random() * 2,
+                speed: 0.5 + Math.random() * 1.5
+            });
+        }
     }
 }
 
@@ -583,13 +666,13 @@ function dibujarBotonGenerico(x, y, texto, color) {
 }
 
 function animarInstrucciones() {
-    let cx = ANCHO / 2;
-    let cy = 250;
+    let cx = (estado_actual === ESTADO_INSTRUCCIONES) ? ANCHO - 220 : ANCHO / 2;
+    let cy = 260;
     
     if (modo_juego === 1) {
-        let color_activo = "#bb86fc";
+        let color_activo = "#ff3333";
         let color_inactivo = "#555555";
-        let ciclo_frames = 60;
+        let ciclo_frames = 150; // Animación 2.5x más lenta
         
         frame_animacion = (frame_animacion + 1) % ciclo_frames;
         let t = frame_animacion < ciclo_frames / 2 ? frame_animacion / (ciclo_frames / 2) : 2 - (frame_animacion / (ciclo_frames / 2));
@@ -661,11 +744,11 @@ function animarInstrucciones() {
         ctx.fillStyle = "white";
         ctx.font = "bold 16px Outfit, Arial";
         ctx.textAlign = "center";
-        ctx.fillText(`TOCA CON EL DEDO ${nombres[dedo_objetivo]}`, cx, cy + 130);
+        ctx.fillText(`TOCA CON EL DEDO ${nombres[dedo_objetivo]}`, cx, cy + 135);
 
     } else if (modo_juego === 2) {
         let color_activo = "#03e5cc";
-        let ciclo_frames = 80;
+        let ciclo_frames = 200; // Animación 2.5x más lenta
         frame_animacion = (frame_animacion + 1) % ciclo_frames;
         let t = frame_animacion < ciclo_frames / 2 ? frame_animacion / (ciclo_frames / 2) : 2 - (frame_animacion / (ciclo_frames / 2));
 
@@ -708,17 +791,17 @@ function animarInstrucciones() {
         ctx.fillStyle = t > 0.5 ? "#00FF00" : "white";
         ctx.font = "bold 16px Outfit, Arial";
         ctx.textAlign = "center";
-        ctx.fillText(msg, cx, cy + 130);
+        ctx.fillText(msg, cx, cy + 135);
 
     } else if (modo_juego === 3) {
-        let color_activo = "#CF6679";
-        let ciclo_frames = 80;
+        let color_activo = "#ffd700";
+        let ciclo_frames = 200; // Animación 2.5x más lenta
         frame_animacion = (frame_animacion + 1) % ciclo_frames;
         
         let t = 0.0;
-        if (frame_animacion < 20) t = frame_animacion / 20.0;
-        else if (frame_animacion < 50) t = 1.0;
-        else if (frame_animacion < 70) t = 1.0 - ((frame_animacion - 50) / 20.0);
+        if (frame_animacion < 50) t = frame_animacion / 50.0;
+        else if (frame_animacion < 125) t = 1.0;
+        else if (frame_animacion < 175) t = 1.0 - ((frame_animacion - 125) / 50.0);
 
         let is_tenso = t > 0.8;
         let jx = is_tenso ? (Math.random() - 0.5) * 4 : 0;
@@ -788,8 +871,67 @@ function animarInstrucciones() {
         ctx.fillStyle = is_tenso ? color_activo : "gray";
         ctx.font = "bold 16px Outfit, Arial";
         ctx.textAlign = "center";
-        ctx.fillText(is_tenso ? "¡MANTÉN TENSIÓN!" : "RELAJA...", cx, cy + 160);
+        ctx.fillText(is_tenso ? "¡MANTÉN TENSIÓN!" : "RELAJA...", cx, cy + 155);
+
+    } else if (modo_juego === 4) {
+        let color_activo = "#00ffff";
+        let ciclo_frames = 200; // Slower speed
+        frame_animacion = (frame_animacion + 1) % ciclo_frames;
+        let t = frame_animacion < ciclo_frames / 2 ? frame_animacion / (ciclo_frames / 2) : 2 - (frame_animacion / (ciclo_frames / 2));
+
+        let bases_x = [-25, 0, 25, 45];
+        let bases_y = [cy - 35, cy - 40, cy - 35, cy - 15];
+        let puntas_open_x = [-30, 0, 30, 55];
+        let puntas_open_y = [cy - 100, cy - 110, cy - 100, cy - 70];
+        let puntas_fist_x = [-20, 0, 20, 35];
+        let puntas_fist_y = [cy - 5, cy - 10, cy - 5, cy + 10];
+
+        // Palma
+        ctx.beginPath();
+        ctx.moveTo(cx - 45, cy + 30);
+        ctx.lineTo(cx - 40, cy - 30);
+        ctx.lineTo(cx, cy - 45);
+        ctx.lineTo(cx + 45, cy - 20);
+        ctx.lineTo(cx + 50, cy + 30);
+        ctx.closePath();
+        ctx.fillStyle = "#1A1A1A";
+        ctx.strokeStyle = color_activo;
+        ctx.lineWidth = 3;
+        ctx.fill();
+        ctx.stroke();
+
+        for (let i = 0; i < 4; i++) {
+            let bx = cx + bases_x[i];
+            let by = bases_y[i];
+            let tx = interpolar(cx + puntas_open_x[i], cx + puntas_fist_x[i], t);
+            let ty = interpolar(puntas_open_y[i], puntas_fist_y[i], t);
+            dibujarDedo(bx, by, tx, ty, 16, color_activo);
+        }
+
+        let pulgar_bx = cx - 40;
+        let pulgar_by = cy + 10;
+        let t_pulgar_x = interpolar(cx - 80, cx + 30, t);
+        let t_pulgar_y = interpolar(cy - 30, cy + 5, t);
+        dibujarDedo(pulgar_bx, pulgar_by, t_pulgar_x, t_pulgar_y, 18, color_activo);
+
+        // Dibujar mini nave moviéndose horizontalmente abajo de la mano
+        let nave_x = cx - 80 + t * 160;
+        let nave_y = cy + 85;
+        
+        ctx.fillStyle = "white";
+        ctx.beginPath();
+        ctx.moveTo(nave_x, nave_y - 8);
+        ctx.lineTo(nave_x - 10, nave_y + 10);
+        ctx.lineTo(nave_x + 10, nave_y + 10);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = "white";
+        ctx.font = "bold 14px Outfit, Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(`TENSIÓN MUSCULAR: ${Math.floor(t * 100)}%`, cx, cy + 135);
     }
+}
 }
 
 // Capturador de errores global para diagnóstico visual directo
@@ -959,38 +1101,115 @@ function gameLoop() {
     
     else if (estado_actual === ESTADO_INSTRUCCIONES) {
         ctx.clearRect(0, 0, ANCHO, ALTO);
-        let titulo = "", instruccion = "", color = "";
+        
+        let titulo = "";
+        let color = "";
+        let lineasDetalle = [];
         
         if (modo_juego === 1) {
-            titulo = "EJERCICIO 1: MARIO RUNNER";
-            instruccion = "Realiza una contracción muscular rápida para saltar obstáculos.\nEsquiva Goombas y tuberías.";
-            color = "#ff3333";
+            titulo = "1 · MARIO RUNNER (COORDINACIÓN)";
+            color = "#e52521";
+            lineasDetalle = [
+                "OBJETIVO TERAPÉUTICO:",
+                "• Desarrollar velocidad de contracción muscular.",
+                "• Reclutamiento de fibras motoras rápidas.",
+                "",
+                "INDICACIONES FÍSICAS:",
+                "• Realiza una contracción rápida y explosiva del músculo",
+                "  (ej. extensión de muñeca o flexión del codo).",
+                "• Relaja el brazo de forma inmediata al tocar.",
+                "",
+                "EN PANTALLA:",
+                "• Superar el umbral calibrado hace saltar a Mario.",
+                "• Esquiva los Goombas y tuberías para sumar repeticiones.",
+                "• Cada 10 repeticiones tendrás 30 segundos de descanso."
+            ];
         } else if (modo_juego === 2) {
-            titulo = "EJERCICIO 2: APERTURA";
-            instruccion = "Mantén contracción media para subir, relaja para bajar.\nFomenta control sostenido.";
-            color = "#00e5cc";
+            titulo = "2 · FLAPPY BIRD (APERTURA SOSTENIDA)";
+            color = "#03e5cc";
+            lineasDetalle = [
+                "OBJETIVO TERAPÉUTICO:",
+                "• Entrenar el control tónico y sostenido de la fuerza.",
+                "• Evitar contracciones bruscas de tipo espástico.",
+                "",
+                "INDICACIONES FÍSICAS:",
+                "• Realiza una contracción suave y progresiva.",
+                "• Mantén el nivel de contracción a mitad de rango",
+                "  para hacer flotar al ave en el aire.",
+                "• Relaja suavemente el brazo para bajar.",
+                "",
+                "EN PANTALLA:",
+                "• El ave amarilla vuela según tu tensión muscular.",
+                "• Pasa por en medio de los tubos verdes para puntuar.",
+                "• Mantén la calma para evitar choques."
+            ];
         } else if (modo_juego === 3) {
-            titulo = "EJERCICIO 3: FUERZA";
-            instruccion = "Contrae al máximo para llenar la barra.\nObjetivo: Completar series al 100%.";
-            color = "#CF6679";
+            titulo = "3 · FUERZA ISOMÉTRICA (TENSIÓN KI)";
+            color = "#ffd700";
+            lineasDetalle = [
+                "OBJETIVO TERAPÉUTICO:",
+                "• Reclutamiento muscular voluntario máximo.",
+                "• Aumentar la fuerza y la resistencia muscular.",
+                "",
+                "INDICACIONES FÍSICAS:",
+                "• Realiza una contracción isométrica máxima (ej. apretar",
+                "  el puño con fuerza) y mantén la tensión constante.",
+                "• Intenta mantener la barra cargada al 100%.",
+                "",
+                "EN PANTALLA:",
+                "• El personaje en pantalla cargará su Ki de Super Saiyajin.",
+                "• Al llegar al 100% de carga, se liberará una descarga",
+                "  de energía y sumará 1 repetición.",
+                "• Relaja entre repeticiones para no sobrecargar."
+            ];
+        } else if (modo_juego === 4) {
+            titulo = "4 · GRADUACIÓN ESPACIAL (SPACE EXPLORER)";
+            color = "#00ffff";
+            lineasDetalle = [
+                "OBJETIVO TERAPÉUTICO:",
+                "• Control analógico fino y dosificación del tono.",
+                "• Coordinación viso-motora e inhibición de sobreesfuerzos.",
+                "",
+                "INDICACIONES FÍSICAS:",
+                "• Regula la fuerza muscular gradualmente:",
+                "  - Relaja al 100% para ir a la izquierda.",
+                "  - Contrae de forma media para mantenerte al centro.",
+                "  - Contrae al máximo para ir a la derecha.",
+                "",
+                "EN PANTALLA:",
+                "• La nave espacial se moverá de acuerdo al nivel de fuerza.",
+                "• La nave dispara automáticamente. Alinea la nave con",
+                "  los asteroides para destruirlos. (5 destruidos = 1 rep)."
+            ];
         }
         
+        // Dibujar Título arriba
         ctx.fillStyle = color;
-        ctx.font = "bold 24px Outfit, Arial";
+        ctx.font = "bold 26px Outfit, Arial";
         ctx.textAlign = "center";
         ctx.fillText(titulo, ANCHO/2, 50);
         
+        // Dibujar sección izquierda: Explicación Detallada
         ctx.fillStyle = "white";
-        ctx.font = "15px Outfit, Arial";
-        let lineas = instruccion.split('\n');
-        ctx.fillText(lineas[0], ANCHO/2, 100);
-        if (lineas[1]) ctx.fillText(lineas[1], ANCHO/2, 125);
+        ctx.textAlign = "left";
+        let startY = 110;
+        for (let i = 0; i < lineasDetalle.length; i++) {
+            let linea = lineasDetalle[i];
+            if (linea.endsWith(":")) {
+                ctx.fillStyle = color;
+                ctx.font = "bold 15px Outfit, Arial";
+            } else {
+                ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+                ctx.font = "14px Outfit, Arial";
+            }
+            ctx.fillText(linea, 60, startY + i * 21);
+        }
         
-        // Recuadro animación
-        ctx.strokeStyle = "gray";
+        // Dibujar recuadro animación a la derecha
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.roundRect(ANCHO/2 - 220, 150, 440, 240, 10);
+        ctx.roundRect(ANCHO - 380, 100, 320, 320, 12);
         ctx.stroke();
         
         animarInstrucciones();
@@ -1163,7 +1382,7 @@ function gameLoop() {
             }
         } 
         
-        // --- JUEGO 2: APERTURA SOSTENIDA (Nave Flappy) ---
+        // --- JUEGO 2: APERTURA SOSTENIDA (Flappy Bird) ---
         else if (modo_juego === 2) {
             let is_above = valor_procesado > umbral_calibrado;
             
@@ -1184,46 +1403,104 @@ function gameLoop() {
             }
             
             if (estado_actual === ESTADO_JUGANDO) {
-                // Dibujar Jugador
-                ctx.beginPath();
-                ctx.arc(120, player_y, 20, 0, Math.PI * 2);
-                ctx.fillStyle = "#00e5cc";
-                ctx.strokeStyle = "white";
-                ctx.lineWidth = 2;
-                ctx.fill();
-                ctx.stroke();
+                // Fondo celeste Flappy Bird
+                ctx.fillStyle = "#70c5cf";
+                ctx.fillRect(0, 0, ANCHO, ALTO);
+                
+                // Nubes en movimiento lento
+                let cloudOffset = (Date.now() / 120) % (ANCHO + 200);
+                dibujarNube(ANCHO - cloudOffset, 40);
+                dibujarNube(ANCHO * 0.4 - cloudOffset, 80);
+                
+                // Silueta de ciudad al fondo
+                ctx.fillStyle = "#61b8c4";
+                let cityOffset = (Date.now() / 60) % 200;
+                for (let k = 0; k < 6; k++) {
+                    let cx = k * 180 - cityOffset;
+                    ctx.fillRect(cx, ALTO - 140, 100, 60);
+                    ctx.fillRect(cx + 40, ALTO - 160, 80, 80);
+                }
+                
+                // Suelo verde Flappy Bird
+                ctx.fillStyle = "#73c726";
+                ctx.fillRect(0, ALTO - 80, ANCHO, 80);
+                ctx.fillStyle = "#5ba31b";
+                ctx.fillRect(0, ALTO - 80, ANCHO, 5);
+                ctx.fillStyle = "#ded895";
+                ctx.fillRect(0, ALTO - 75, ANCHO, 75);
+                
+                // Dibujar Jugador (Ave Flappy Bird)
+                let sprite_x = 120 - 18;
+                let sprite_y = player_y - 15;
+                dibujarSprite(ctx, sprite_x, sprite_y, BIRD_SPRITE, 3, {
+                    1: "#f8d010", // Amarillo cuerpo
+                    2: "#ffffff", // Blanco ojos
+                    3: "#000000", // Negro contornos
+                    4: "#e85018", // Rojo pico
+                    5: "#f88018"  // Naranja ala
+                });
                 
                 // Obstáculos (Pilares dobles)
                 let now = Date.now();
                 if (now > timer_obstaculo) {
-                    let gap_y = 100 + Math.random() * (ALTO - 350);
+                    let gap_y = 80 + Math.random() * (ALTO - 320); // Asegurar que quede dentro
                     obstacles.push({ x: ANCHO, gap_y: gap_y, gap_h: gap_height_j2, passed: false });
-                    timer_obstaculo = now + 4000; // Espaciado cómodo
+                    timer_obstaculo = now + 4000;
                 }
                 
                 for (let i = obstacles.length - 1; i >= 0; i--) {
                     let obs = obstacles[i];
-                    obs.x -= 2.0 * dt; // Velocidad pausada con dt
+                    obs.x -= 2.0 * dt;
                     
-                    // Dibujar pilar superior
-                    ctx.fillStyle = "#333333";
-                    ctx.strokeStyle = "gray";
-                    ctx.lineWidth = 2;
+                    // Pilar superior (Tubería verde de Flappy)
+                    ctx.fillStyle = "#73c726";
+                    ctx.strokeStyle = "#000000";
+                    ctx.lineWidth = 2.5;
+                    
+                    // Cuerpo pilar superior
                     ctx.beginPath();
-                    ctx.roundRect(obs.x, 0, 50, obs.gap_y, 4);
+                    ctx.roundRect(obs.x + 4, 0, 42, obs.gap_y - 20, [0, 0, 0, 0]);
+                    ctx.fill();
+                    ctx.stroke();
+                    // Boca pilar superior
+                    ctx.beginPath();
+                    ctx.roundRect(obs.x, obs.gap_y - 20, 50, 20, 3);
                     ctx.fill();
                     ctx.stroke();
                     
-                    // Dibujar pilar inferior
+                    // Pilar inferior (Tubería verde)
+                    // Cuerpo pilar inferior
                     ctx.beginPath();
-                    ctx.roundRect(obs.x, obs.gap_y + obs.gap_h, 50, ALTO - (obs.gap_y + obs.gap_h), 4);
+                    ctx.roundRect(obs.x + 4, obs.gap_y + obs.gap_h + 20, 42, ALTO - 80 - (obs.gap_y + obs.gap_h + 20), [0, 0, 0, 0]);
+                    ctx.fill();
+                    ctx.stroke();
+                    // Boca pilar inferior
+                    ctx.beginPath();
+                    ctx.roundRect(obs.x, obs.gap_y + obs.gap_h, 50, 20, 3);
                     ctx.fill();
                     ctx.stroke();
                     
-                    // Colisión (Hitbox indulgente)
-                    let hit = 120 + 20 - 8 > obs.x && 
-                              120 - 20 + 8 < obs.x + 50 && 
-                              (player_y - 20 + 8 < obs.gap_y || player_y + 20 - 8 > obs.gap_y + obs.gap_h);
+                    // Sombras y brillos en tuberías
+                    ctx.fillStyle = "#cff57a"; // Brillo
+                    ctx.fillRect(obs.x + 8, 0, 5, obs.gap_y - 20);
+                    ctx.fillRect(obs.x + 8, obs.gap_y + obs.gap_h + 20, 5, ALTO - 80 - (obs.gap_y + obs.gap_h + 20));
+                    ctx.fillRect(obs.x + 4, obs.gap_y - 18, 5, 16);
+                    ctx.fillRect(obs.x + 4, obs.gap_y + obs.gap_h + 2, 5, 16);
+                    
+                    ctx.fillStyle = "#4b8513"; // Sombra
+                    ctx.fillRect(obs.x + 36, 0, 6, obs.gap_y - 20);
+                    ctx.fillRect(obs.x + 36, obs.gap_y + obs.gap_h + 20, 6, ALTO - 80 - (obs.gap_y + obs.gap_h + 20));
+                    ctx.fillRect(obs.x + 42, obs.gap_y - 18, 6, 16);
+                    ctx.fillRect(obs.x + 42, obs.gap_y + obs.gap_h + 2, 6, 16);
+                    
+                    // Colisión (Hitbox indulgente AABB)
+                    let bird_left = 120 - 15 + 4;
+                    let bird_right = 120 + 15 - 4;
+                    let bird_top = player_y - 12 + 4;
+                    let bird_bottom = player_y + 12 - 4;
+                    
+                    let hit = bird_right > obs.x && bird_left < obs.x + 50 &&
+                              (bird_top < obs.gap_y || bird_bottom > obs.gap_y + obs.gap_h);
                     
                     if (hit) {
                         gameOver();
@@ -1240,7 +1517,7 @@ function gameLoop() {
             }
         } 
         
-        // --- JUEGO 3: FUERZA ISOMÉTRICA (Barra Carga) ---
+        // --- JUEGO 3: FUERZA ISOMÉTRICA (Ki Charging / Saiyan) ---
         else if (modo_juego === 3) {
             let is_above = valor_procesado > umbral_calibrado;
             if (is_above) {
@@ -1250,42 +1527,271 @@ function gameLoop() {
             }
             nivel_carga = Math.max(0, Math.min(max_carga, nivel_carga));
             
-            let cx = ANCHO / 2;
-            let cy = ALTO / 2 - 40;
+            // Fondo de campo de batalla rocoso
+            ctx.fillStyle = "#1e152a"; // Púrpura oscuro
+            ctx.fillRect(0, 0, ANCHO, ALTO);
             
-            // Dibujar contenedor de barra exterior
-            ctx.strokeStyle = "white";
-            ctx.lineWidth = 4;
+            // Horizonte rojizo
+            let grad = ctx.createLinearGradient(0, ALTO - 160, 0, ALTO - 80);
+            grad.addColorStop(0, "#1e152a");
+            grad.addColorStop(1, "#c84c0c");
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, ALTO - 160, ANCHO, 80);
+            
+            // Suelo rocoso
+            ctx.fillStyle = "#3c2a21";
+            ctx.fillRect(0, ALTO - 80, ANCHO, 80);
+            ctx.strokeStyle = "#251a15";
+            ctx.lineWidth = 3;
             ctx.beginPath();
-            ctx.roundRect(cx - 80, cy - 150, 160, 300, 10);
+            ctx.moveTo(0, ALTO - 80);
+            ctx.lineTo(ANCHO, ALTO - 80);
+            ctx.stroke();
+            
+            let cx = ANCHO / 2;
+            let cy = ALTO - 200; // Colocar al personaje de pie sobre el suelo
+            
+            // Dibujar Aura y chispas si el nivel de carga es alto
+            if (nivel_carga > 5) {
+                // Dibujar halo de energía (Aura) detrás del jugador
+                let auraRadius = 30 + (nivel_carga / max_carga) * 60;
+                let auraColor = "rgba(0, 229, 204, 0.4)"; // Cyan / Verde ki
+                if (nivel_carga > 50) auraColor = "rgba(255, 215, 0, 0.5)"; // Super saiyajin dorado
+                
+                ctx.fillStyle = auraColor;
+                ctx.beginPath();
+                ctx.arc(cx, cy + 20, auraRadius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Destellos / Rayos de Ki
+                ctx.strokeStyle = nivel_carga > 50 ? "#fff275" : "#00ffff";
+                ctx.lineWidth = 2;
+                let numRayos = Math.floor(nivel_carga / 10);
+                for (let r = 0; r < numRayos; r++) {
+                    let rx = cx + (Math.random() - 0.5) * 120;
+                    let ry = cy + 20 + (Math.random() - 0.5) * 120;
+                    ctx.beginPath();
+                    ctx.moveTo(rx, ry);
+                    ctx.lineTo(rx + (Math.random() - 0.5) * 20, ry - 15 - Math.random() * 20);
+                    ctx.stroke();
+                }
+            }
+            
+            // Dibujar Personaje (Hero Saiyan)
+            let sprite_x = cx - 18;
+            let sprite_y = cy - 20;
+            let heroMatrix = HERO_BASE;
+            
+            if (nivel_carga > 50) {
+                heroMatrix = HERO_SUPER;
+            }
+            
+            dibujarSprite(ctx, sprite_x, sprite_y, heroMatrix, 3, {
+                1: nivel_carga > 50 ? "#ffd700" : "#000000", // Pelo dorado o negro
+                2: "#fec39e", // Piel
+                3: "#ff6600", // Traje naranja
+                4: "#002fa7", // Botas/cinturón azul
+                5: "#00ffff"  // Brillo
+            });
+            
+            // Contenedor de barra de carga flotando arriba del personaje
+            let barX = cx - 150;
+            let barY = 80;
+            
+            ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+            ctx.beginPath();
+            ctx.roundRect(barX - 10, barY - 10, 320, 45, 8);
+            ctx.fill();
+            
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.roundRect(barX, barY, 300, 25, 6);
             ctx.stroke();
             
             // Relleno de la barra
-            let altura_relleno = (nivel_carga / max_carga) * 290;
+            let width_relleno = (nivel_carga / max_carga) * 296;
             let color_carga = "#CF6679";
-            if (nivel_carga > 50) color_carga = "yellow";
-            if (nivel_carga > 80) color_carga = "#00FF00";
+            if (nivel_carga > 50) color_carga = "#ffd700";
+            if (nivel_carga > 80) color_carga = "#00e5cc";
             
             ctx.fillStyle = color_carga;
             ctx.beginPath();
-            ctx.roundRect(cx - 75, (cy + 145) - altura_relleno, 150, altura_relleno, 6);
+            ctx.roundRect(barX + 2, barY + 2, width_relleno, 21, 4);
             ctx.fill();
             
             // Texto del porcentaje
-            ctx.fillStyle = nivel_carga > 50 ? "black" : "white";
-            ctx.font = "bold 36px Outfit, Arial";
+            ctx.fillStyle = "white";
+            ctx.font = "bold 16px Outfit, Arial";
             ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText(`${Math.floor(nivel_carga)}%`, cx, cy);
+            ctx.fillText(`CARGA KI: ${Math.floor(nivel_carga)}%`, cx, barY + 18);
             
             ctx.fillStyle = "white";
-            ctx.font = "16px Outfit, Arial";
-            ctx.fillText("¡CONTRAE FUERTE!", cx, cy + 180);
+            ctx.font = "bold 20px Outfit, Arial";
+            ctx.fillText("¡CONTRAE EL MÚSCULO PARA CARGAR TU KI!", cx, 40);
             
             if (nivel_carga >= max_carga) {
                 nivel_carga = 0;
                 registrarRepeticion();
             }
+        }
+        
+        // --- JUEGO 4: GRADUACIÓN ESPACIAL (Space Explorer) ---
+        else if (modo_juego === 4) {
+            // Fondo espacial oscuro
+            ctx.fillStyle = "#0c0a15";
+            ctx.fillRect(0, 0, ANCHO, ALTO);
+            
+            // Dibujar y actualizar estrellas de fondo
+            ctx.fillStyle = "white";
+            for (let s of stars) {
+                s.y += s.speed * dt;
+                if (s.y > ALTO) {
+                    s.y = 0;
+                    s.x = Math.random() * ANCHO;
+                }
+                ctx.fillRect(s.x, s.y, s.size, s.size);
+            }
+            
+            // Posicionar nave según nivel de fuerza graduado de forma lineal
+            let ratio = Math.max(0, Math.min(1, (valor_procesado - min_ruido) / (max_senal - min_ruido + 1)));
+            let target_x = 100 + ratio * 700;
+            player_x += (target_x - player_x) * 0.15 * dt; // Suavizar movimiento de la nave
+            player_y = ALTO - 70;
+            
+            // Dibujar la Nave
+            let sprite_x = player_x - 18;
+            let sprite_y = player_y - 12;
+            dibujarSprite(ctx, sprite_x, sprite_y, SPACESHIP_SPRITE, 3, {
+                1: "#8a9bb5", // Gris
+                2: "#ff3333", // Rojo
+                3: (Math.floor(Date.now() / 100) % 2 === 0) ? "#ff9d45" : "#ffd700", // Fuego motor
+                4: "#00ffff"  // Vidrio
+            });
+            
+            let now = Date.now();
+            
+            // Auto-disparar láseres cada 400ms
+            if (now - last_laser_time > 400) {
+                lasers.push({ x: player_x, y: player_y - 15 });
+                last_laser_time = now;
+            }
+            
+            // Actualizar y dibujar láseres
+            ctx.fillStyle = "#ff3333";
+            for (let j = lasers.length - 1; j >= 0; j--) {
+                let las = lasers[j];
+                las.y -= 7.0 * dt;
+                
+                ctx.fillRect(las.x - 2, las.y, 4, 15);
+                ctx.fillStyle = "#ffff00";
+                ctx.fillRect(las.x - 1, las.y + 4, 2, 7);
+                ctx.fillStyle = "#ff3333"; // Reset
+                
+                if (las.y < 0) lasers.splice(j, 1);
+            }
+            
+            // Spawn de asteroides
+            if (now > timer_obstaculo) {
+                obstacles.push({
+                    x: 50 + Math.random() * (ANCHO - 100),
+                    y: -30,
+                    speedY: 1.2 + Math.random() * 1.5,
+                    size: 20 + Math.random() * 15,
+                    passed: false
+                });
+                timer_obstaculo = now + 1200 + Math.random() * 1200;
+            }
+            
+            // Dibujar asteroides y colisiones
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                let obs = obstacles[i];
+                obs.y += obs.speedY * dt;
+                
+                // Dibujar Asteroide (Roca gris con cráteres)
+                ctx.fillStyle = "#5a525d";
+                ctx.beginPath();
+                ctx.arc(obs.x, obs.y, obs.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Detalles de cráteres
+                ctx.fillStyle = "#3e3740";
+                ctx.beginPath();
+                ctx.arc(obs.x - obs.size * 0.3, obs.y - obs.size * 0.2, obs.size * 0.25, 0, Math.PI * 2);
+                ctx.arc(obs.x + obs.size * 0.2, obs.y + obs.size * 0.3, obs.size * 0.2, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.strokeStyle = "#2b262d";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(obs.x, obs.y, obs.size, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Colisión Nave vs Asteroide
+                let dist_ship = Math.hypot(player_x - obs.x, player_y - obs.y);
+                if (dist_ship < obs.size + 15) {
+                    gameOver();
+                    break;
+                }
+                
+                if (obs.y > ALTO + 30) obstacles.splice(i, 1);
+            }
+            
+            // Colisiones Láser vs Asteroide
+            for (let j = lasers.length - 1; j >= 0; j--) {
+                let las = lasers[j];
+                for (let i = obstacles.length - 1; i >= 0; i--) {
+                    let obs = obstacles[i];
+                    let dist = Math.hypot(las.x - obs.x, las.y - obs.y);
+                    if (dist < obs.size + 6) {
+                        // Crear explosión
+                        explosions.push({
+                            x: obs.x,
+                            y: obs.y,
+                            radius: 5,
+                            maxRadius: obs.size * 1.6,
+                            progress: 0
+                        });
+                        obstacles.splice(i, 1);
+                        lasers.splice(j, 1);
+                        
+                        repeticiones_acumuladas++;
+                        if (repeticiones_acumuladas >= 5) {
+                            registrarRepeticion();
+                            repeticiones_acumuladas = 0;
+                        }
+                        break;
+                    }
+                }
+            }
+            
+            // Dibujar explosiones
+            for (let k = explosions.length - 1; k >= 0; k--) {
+                let exp = explosions[k];
+                exp.progress += 0.12 * dt;
+                let currentRadius = interpolar(exp.radius, exp.maxRadius, exp.progress);
+                
+                // Círculo interno y externo de explosión
+                ctx.fillStyle = "rgba(255, 100, 0, " + (1 - exp.progress) + ")";
+                ctx.beginPath();
+                ctx.arc(exp.x, exp.y, currentRadius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = "rgba(255, 200, 0, " + (1 - exp.progress) + ")";
+                ctx.beginPath();
+                ctx.arc(exp.x, exp.y, currentRadius * 0.6, 0, Math.PI * 2);
+                ctx.fill();
+                
+                if (exp.progress >= 1.0) {
+                    explosions.splice(k, 1);
+                }
+            }
+            
+            // Mostrar HUD superior de asteroides destruidos en la serie
+            ctx.fillStyle = "white";
+            ctx.font = "14px Outfit, Arial";
+            ctx.textAlign = "center";
+            ctx.fillText(`Asteroides para siguiente REP: ${repeticiones_acumuladas}/5`, ANCHO / 2, 40);
         }
     } 
     
