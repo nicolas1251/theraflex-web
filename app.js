@@ -99,21 +99,21 @@ let sessionStart = 0;
 
 // =============================================
 // 4. FÍSICA DEL JUEGO 1 — Valores terapéuticos
-//    (Recalibrados para 60 FPS → "Gravedad Lunar")
 // =============================================
 const GROUND_OFFSET = 150;           // px desde abajo
-const GRAVITY       = 0.35;          // Caída suave y extendida
-const JUMP_FORCE    = -11;           // Altura controlada
-const OBS_SPEED     = 2.0;           // px/frame (avance lento)
-const OBS_MIN_GAP   = 3500;          // ms mínimo entre obstáculos
-const OBS_RAND_GAP  = 2000;          // ms aleatorio adicional
-const JUMP_COOLDOWN = 300;           // ms entre saltos
+const GRAVITY       = 0.65;          // Caída más rápida (arco corto y predecible)
+const JUMP_FORCE    = -13;           // Altura suficiente para esquivar
+const OBS_SPEED     = 1.5;           // px/frame — avance lento (fácil)
+const OBS_MIN_GAP   = 4500;          // ms mínimo entre obstáculos (más tiempo)
+const OBS_RAND_GAP  = 2500;          // ms aleatorio adicional
+const JUMP_COOLDOWN = 800;           // ms mínimos entre saltos (evita doble salto)
 
-let playerY       = 0;
-let playerVel     = 0;
-let obstacles     = [];
-let lastJumpTime  = 0;
-let lastObsTime   = 0;
+let playerY          = 0;
+let playerVel        = 0;
+let obstacles        = [];
+let lastJumpTime     = 0;
+let lastObsTime      = 0;
+let prevAboveThresh  = false;  // Para detección de flanco de subida (rising edge)
 
 // =============================================
 // 5. UTILIDADES DE DIBUJO
@@ -384,7 +384,12 @@ function drawGame1(now) {
     drawGround(groundY);
 
     // --- Física del jugador ---
-    if (processedVal > threshold && playerY >= groundY && (now - lastJumpTime) > JUMP_COOLDOWN) {
+    // Rising-edge: solo salta en el momento que la señal CRUZA el umbral hacia arriba
+    const currAbove = processedVal > threshold;
+    const risingEdge = currAbove && !prevAboveThresh;
+    prevAboveThresh = currAbove;
+
+    if (risingEdge && playerY >= groundY && (now - lastJumpTime) > JUMP_COOLDOWN) {
         playerVel    = JUMP_FORCE;
         lastJumpTime = now;
         reps++;
@@ -405,6 +410,8 @@ function drawGame1(now) {
     const OBS_W = 28, OBS_H = 48;
     const playerR = 18;
     const playerX = 120;
+    // Hitbox más generosa (margen de 10px) para que el juego sea más fácil
+    const HIT_MARGIN = 10;
 
     for (let i = obstacles.length - 1; i >= 0; i--) {
         const obs = obstacles[i];
@@ -412,11 +419,11 @@ function drawGame1(now) {
 
         drawObstacle(obs.x, groundY, OBS_W, OBS_H);
 
-        // Colisión por bounding-box ajustada
+        // Colisión con hitbox reducida (más fácil de esquivar)
         const hit =
-            playerX + playerR - 6 > obs.x + 4 &&
-            playerX - playerR + 6 < obs.x + OBS_W - 4 &&
-            playerY - playerR + 6 > groundY - OBS_H;
+            playerX + playerR - HIT_MARGIN > obs.x + HIT_MARGIN &&
+            playerX - playerR + HIT_MARGIN < obs.x + OBS_W - HIT_MARGIN &&
+            playerY - playerR + HIT_MARGIN > groundY - OBS_H + HIT_MARGIN;
 
         if (hit) {
             triggerGameOver();
