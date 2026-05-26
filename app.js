@@ -136,39 +136,75 @@ canvas.addEventListener('click', (e) => {
     const clickX = (e.clientX - rect.left) * scaleX;
     const clickY = (e.clientY - rect.top) * scaleY;
 
+    console.log(`Canvas Click: x=${clickX.toFixed(1)}, y=${clickY.toFixed(1)} | Estado:${estado_actual} Paso:${paso_calibracion}`);
+
     if (estado_actual === ESTADO_CALIBRACION) {
         if (paso_calibracion === 0) {
-            // Botón EMPEZAR
-            if (clickX > ANCHO/2 - 150 && clickX < ANCHO/2 + 150 && clickY > 355 && clickY < 405) {
+            // Botón EMPEZAR (Dibujado en y=380, h=50, w=300)
+            if (clickX > ANCHO/2 - 180 && clickX < ANCHO/2 + 180 && clickY > 320 && clickY < 440) {
+                console.log("-> Click EMPEZAR");
                 paso_calibracion = 1;
                 actualizarPantallaCalibracion();
             }
         } else if (paso_calibracion === 3) {
-            // Botón VOLVER AL MENÚ
-            if (clickX > ANCHO/2 - 150 && clickX < ANCHO/2 + 150 && clickY > 395 && clickY < 445) {
+            // Botón VOLVER AL MENÚ (Dibujado en y=420, h=50, w=300)
+            if (clickX > ANCHO/2 - 180 && clickX < ANCHO/2 + 180 && clickY > 360 && clickY < 480) {
+                console.log("-> Click VOLVER AL MENÚ");
                 mostrarMenuPrincipal();
             }
         } else if (paso_calibracion === 4) {
-            // Botón REINTENTAR
-            if (clickX > ANCHO/2 - 150 && clickX < ANCHO/2 + 150 && clickY > 325 && clickY < 375) {
+            // Botón REINTENTAR (Dibujado en y=350, h=50, w=300)
+            if (clickX > ANCHO/2 - 180 && clickX < ANCHO/2 + 180 && clickY > 290 && clickY < 410) {
+                console.log("-> Click REINTENTAR");
                 iniciarCalibracion();
             }
         }
     } else if (estado_actual === ESTADO_INSTRUCCIONES) {
-        // Botón COMENZAR TERAPIA
-        if (clickX > ANCHO/2 - 150 && clickX < ANCHO/2 + 150 && clickY > 445 && clickY < 495) {
+        // Botón COMENZAR TERAPIA (Dibujado en y=470, h=50, w=300)
+        if (clickX > ANCHO/2 - 180 && clickX < ANCHO/2 + 180 && clickY > 410 && clickY < 530) {
+            console.log("-> Click COMENZAR TERAPIA");
             iniciarPartida();
         }
     } else if (estado_actual === ESTADO_GAMEOVER) {
-        // Botón REINICIAR EJERCICIO
-        if (clickX > ANCHO/2 - 150 && clickX < ANCHO/2 + 150 && clickY > ALTO/2 + 25 && clickY < ALTO/2 + 75) {
+        // Botón REINICIAR EJERCICIO (Dibujado en y=ALTO/2 + 50)
+        if (clickX > ANCHO/2 - 180 && clickX < ANCHO/2 + 180 && clickY > ALTO/2 + 10 && clickY < ALTO/2 + 90) {
+            console.log("-> Click REINICIAR EJERCICIO");
             iniciarInstrucciones(modo_juego);
         }
-        // Botón MENÚ PRINCIPAL
-        if (clickX > ANCHO/2 - 150 && clickX < ANCHO/2 + 150 && clickY > ALTO/2 + 105 && clickY < ALTO/2 + 155) {
+        // Botón MENÚ PRINCIPAL (Dibujado en y=ALTO/2 + 130)
+        if (clickX > ANCHO/2 - 180 && clickX < ANCHO/2 + 180 && clickY > ALTO/2 + 90 && clickY < ALTO/2 + 170) {
+            console.log("-> Click MENÚ PRINCIPAL");
             mostrarMenuPrincipal();
         }
     }
+});
+
+// Mostrar cursor pointer cuando se pasa sobre un botón
+canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const mouseX = (e.clientX - rect.left) * scaleX;
+    const mouseY = (e.clientY - rect.top) * scaleY;
+    
+    let sobre_boton = false;
+    
+    if (estado_actual === ESTADO_CALIBRACION) {
+        if (paso_calibracion === 0) {
+            sobre_boton = (mouseX > ANCHO/2 - 180 && mouseX < ANCHO/2 + 180 && mouseY > 320 && mouseY < 440);
+        } else if (paso_calibracion === 3) {
+            sobre_boton = (mouseX > ANCHO/2 - 180 && mouseX < ANCHO/2 + 180 && mouseY > 360 && mouseY < 480);
+        } else if (paso_calibracion === 4) {
+            sobre_boton = (mouseX > ANCHO/2 - 180 && mouseX < ANCHO/2 + 180 && mouseY > 290 && mouseY < 410);
+        }
+    } else if (estado_actual === ESTADO_INSTRUCCIONES) {
+        sobre_boton = (mouseX > ANCHO/2 - 180 && mouseX < ANCHO/2 + 180 && mouseY > 410 && mouseY < 530);
+    } else if (estado_actual === ESTADO_GAMEOVER) {
+        sobre_boton = (mouseX > ANCHO/2 - 180 && mouseX < ANCHO/2 + 180 && mouseY > ALTO/2 + 10 && mouseY < ALTO/2 + 90) ||
+                      (mouseX > ANCHO/2 - 180 && mouseX < ANCHO/2 + 180 && mouseY > ALTO/2 + 90 && mouseY < ALTO/2 + 170);
+    }
+    
+    canvas.style.cursor = sobre_boton ? 'pointer' : 'default';
 });
 
 // Teclado: Simulación de Señal con Barra Espaciadora + ESC para volver
