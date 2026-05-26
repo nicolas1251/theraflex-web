@@ -66,14 +66,14 @@ let paso_calibracion = 0;
 let timer_calibracion = 0;
 let buffer_calibracion = [];
 
-// Físicas y Tiempos (Juego 1)
+// Físicas y Tiempos (Juego 1) - AJUSTADOS PARA TERAPIA
 let player_y = ALTO - 200;
 let player_vel = 0;
-const gravity = 1.2;
-const jump_force = -22;
+const gravity = 0.7;        // Modificado: Cae más lento
+const jump_force = -16;     // Modificado: Salto menos brusco
 let obstaculos = [];
 let last_jump_time = 0;
-let last_obstacle_time = 0; // Para controlar la frecuencia de aparición
+let last_obstacle_time = 0; 
 
 // --- GESTIÓN DE PANTALLAS ---
 function mostrarMenuPrincipal() {
@@ -83,7 +83,6 @@ function mostrarMenuPrincipal() {
     topBar.style.display = "block";
     menuDiv.style.display = "block";
     
-    // Actualiza el texto con los datos reales guardados
     document.getElementById('lblCalibracion').innerText = `Calibración Actual -> Reposo: ${min_ruido.toFixed(1)} | Máx: ${max_senal.toFixed(1)} | Umbral: ${umbral_calibrado.toFixed(1)}`;
 }
 
@@ -116,7 +115,7 @@ document.getElementById('btnJuego3').addEventListener('click', () => alert("Jueg
 // --- MOTOR GRÁFICO (DIBUJO A 60 FPS) ---
 function loop() {
     let current_time = Date.now();
-    ctx.clearRect(0, 0, ANCHO, ALTO); // Limpiar pantalla
+    ctx.clearRect(0, 0, ANCHO, ALTO); 
 
     // -----------------------------------------
     // LÓGICA DE CALIBRACIÓN VISUAL
@@ -178,7 +177,6 @@ function loop() {
             if (progreso >= 1) {
                 max_senal = Math.max(...buffer_calibracion);
                 let diferencia = max_senal - min_ruido;
-                // Cálculo de umbral idéntico a tu Python
                 umbral_calibrado = min_ruido + (diferencia * 0.25);
                 lblUmbral.innerText = umbral_calibrado.toFixed(1);
                 
@@ -201,7 +199,7 @@ function loop() {
                 mostrarMenuPrincipal();
             }
         }
-        ctx.textAlign = "left"; // Restaurar alineación
+        ctx.textAlign = "left"; 
     }
 
     // -----------------------------------------
@@ -228,11 +226,10 @@ function loop() {
         ctx.fillStyle = "white";
         ctx.fillRect(0, suelo_y, ANCHO, 3);
 
-        // Control de spawn de obstáculos (mucho más lento y controlado)
-        if (current_time - last_obstacle_time > 2500) { 
+        // Control de spawn de obstáculos (Modificado: más tiempo entre ellos)
+        if (current_time - last_obstacle_time > 3500) { 
             obstaculos.push({ x: ANCHO, y: suelo_y - 40, passed: false });
-            // Añade un tiempo aleatorio entre 0 y 1.5 segundos extras de espera
-            last_obstacle_time = current_time + (Math.random() * 1500); 
+            last_obstacle_time = current_time + (Math.random() * 2000); 
         }
 
         // Dibujar Jugador
@@ -247,7 +244,7 @@ function loop() {
         // Mover y dibujar obstáculos
         for (let i = obstaculos.length - 1; i >= 0; i--) {
             let obs = obstaculos[i];
-            obs.x -= 4.5; // Velocidad de movimiento drásticamente reducida (antes era 9)
+            obs.x -= 2.0; // Modificado: Velocidad mucho más lenta
 
             ctx.beginPath();
             ctx.moveTo(obs.x, obs.y + 40);
