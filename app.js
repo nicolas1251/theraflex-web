@@ -113,6 +113,160 @@ function ajustarResolucionCanvas() {
     ctx.scale(rect.width / ANCHO, rect.height / ALTO);
 }
 
+
+// --- MARIO SPRITES Y COLORES ---
+const MARIO_COLORES = {
+    1: "#e52521", // Rojo
+    2: "#fec39e", // Piel / Durazno
+    3: "#5c3d26", // Marrón / Café
+    4: "#002fa7", // Azul
+    5: "#fcd116"  // Amarillo
+};
+
+const GOOMBA_COLORES = {
+    1: "#4a2500", // Café Oscuro (pies)
+    2: "#a85400", // Café Claro (cuerpo)
+    3: "#ffffff", // Blanco (ojos)
+    4: "#000000"  // Negro (pupilas)
+};
+
+const MARIO_STAND = [
+    [0,0,0,1,1,1,1,1,0,0,0,0],
+    [0,0,1,1,1,1,1,1,1,1,1,0],
+    [0,0,3,3,3,2,2,3,2,0,0,0],
+    [0,3,2,3,2,2,2,3,2,2,2,0],
+    [0,3,2,3,3,2,2,2,3,2,2,2],
+    [0,3,3,2,2,2,2,3,3,3,3,0],
+    [0,0,0,2,2,2,2,2,2,2,0,0],
+    [0,0,3,3,1,3,3,1,3,3,0,0],
+    [0,3,3,3,1,3,3,1,3,3,3,0],
+    [3,3,3,3,1,1,1,1,3,3,3,3],
+    [2,2,3,1,2,1,1,2,1,3,2,2],
+    [2,2,2,1,1,1,1,1,1,2,2,2],
+    [2,2,1,1,1,1,1,1,1,1,2,2],
+    [0,0,1,1,1,0,0,1,1,1,0,0],
+    [0,3,3,3,0,0,0,0,3,3,3,0],
+    [3,3,3,3,0,0,0,0,3,3,3,3]
+];
+
+const MARIO_RUN = [
+    [0,0,0,1,1,1,1,1,0,0,0,0],
+    [0,0,1,1,1,1,1,1,1,1,1,0],
+    [0,0,3,3,3,2,2,3,2,0,0,0],
+    [0,3,2,3,2,2,2,3,2,2,2,0],
+    [0,3,2,3,3,2,2,2,3,2,2,2],
+    [0,3,3,2,2,2,2,3,3,3,3,0],
+    [0,0,0,2,2,2,2,2,2,2,0,0],
+    [0,0,1,1,3,1,1,1,0,0,0,0],
+    [0,1,1,1,3,1,1,1,3,1,1,0],
+    [1,1,1,1,3,3,3,3,1,1,1,1],
+    [2,2,1,3,2,1,1,2,3,1,2,2],
+    [0,0,3,1,1,1,1,1,1,3,0,0],
+    [0,3,3,1,1,1,1,1,1,3,3,0],
+    [3,3,3,1,1,0,0,1,1,3,3,3],
+    [3,3,0,0,0,0,0,0,0,0,3,3],
+    [0,0,0,0,0,0,0,0,0,0,0,0]
+];
+
+const MARIO_JUMP = [
+    [0,0,0,1,1,1,1,1,0,0,0,0],
+    [0,0,1,1,1,1,1,1,1,1,1,0],
+    [0,0,3,3,3,2,2,3,2,0,0,0],
+    [0,3,2,3,2,2,2,3,2,2,2,0],
+    [0,3,2,3,3,2,2,2,3,2,2,2],
+    [0,3,3,2,2,2,2,3,3,3,3,0],
+    [0,0,0,2,2,2,2,2,2,2,0,0],
+    [0,0,0,1,1,3,1,1,1,0,0,2],
+    [0,0,1,1,1,3,1,1,1,1,2,2],
+    [0,2,1,1,1,3,3,3,1,1,1,2],
+    [2,2,0,1,3,2,1,2,3,1,0,0],
+    [2,0,0,3,1,1,1,1,1,3,0,0],
+    [0,0,3,3,1,1,1,1,1,3,3,0],
+    [0,3,3,3,1,1,1,1,1,3,3,3],
+    [3,3,3,0,1,1,0,1,1,0,3,3],
+    [3,3,0,0,1,1,0,1,1,0,0,0]
+];
+
+const GOOMBA_SPRITE = [
+    [0,0,0,0,2,2,2,2,0,0,0,0],
+    [0,0,0,2,2,2,2,2,2,0,0,0],
+    [0,0,2,2,2,2,2,2,2,2,0,0],
+    [0,2,2,4,4,2,2,4,4,2,2,0],
+    [2,2,2,4,4,2,2,4,4,2,2,2],
+    [2,2,3,3,3,2,2,3,3,3,2,2],
+    [2,2,3,4,3,2,2,3,4,3,2,2],
+    [2,2,2,3,2,2,2,2,3,2,2,2],
+    [0,2,2,2,2,2,2,2,2,2,2,0],
+    [0,0,2,2,1,1,1,1,2,2,0,0],
+    [0,0,1,1,1,1,1,1,1,1,0,0],
+    [0,1,1,1,1,1,1,1,1,1,1,0],
+    [1,1,1,1,0,0,0,0,1,1,1,1],
+    [1,1,1,0,0,0,0,0,0,1,1,1]
+];
+
+function dibujarSprite(ctx, x, y, matrix, pixelSize, colorMap) {
+    for (let r = 0; r < matrix.length; r++) {
+        for (let c = 0; c < matrix[r].length; c++) {
+            let colorId = matrix[r][c];
+            if (colorId !== 0 && colorMap[colorId]) {
+                ctx.fillStyle = colorMap[colorId];
+                ctx.fillRect(x + c * pixelSize, y + r * pixelSize, pixelSize, pixelSize);
+            }
+        }
+    }
+}
+
+function dibujarNube(x, y) {
+    ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+    ctx.beginPath();
+    ctx.roundRect(x, y, 60, 25, 12);
+    ctx.roundRect(x + 15, y - 15, 40, 30, 15);
+    ctx.fill();
+}
+
+function dibujarArbusto(x, y) {
+    ctx.fillStyle = "#00a230";
+    ctx.beginPath();
+    ctx.roundRect(x, y, 80, 30, [15, 15, 0, 0]);
+    ctx.roundRect(x + 20, y - 15, 40, 30, 20);
+    ctx.fill();
+    // Brillo de luz
+    ctx.fillStyle = "#3be23b";
+    ctx.beginPath();
+    ctx.roundRect(x + 5, y + 2, 70, 4, 2);
+    ctx.fill();
+}
+
+function dibujarSueloMario(suelo_y) {
+    let blockWidth = 30;
+    let numBlocks = Math.ceil(ANCHO / blockWidth);
+    for (let i = 0; i < numBlocks; i++) {
+        let x = i * blockWidth;
+        let y = suelo_y + 10;
+        // Pasto
+        ctx.fillStyle = "#00a230";
+        ctx.fillRect(x, y, blockWidth, 8);
+        ctx.fillStyle = "#8cd600";
+        ctx.fillRect(x, y, blockWidth, 3);
+        
+        // Tierra
+        ctx.fillStyle = "#c84c0c";
+        ctx.fillRect(x, y + 8, blockWidth, ALTO - (y + 8));
+        
+        // Contornos de ladrillo
+        ctx.strokeStyle = "#943200";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x, y + 8, blockWidth, ALTO - (y + 8));
+        
+        ctx.beginPath();
+        ctx.moveTo(x, y + 28);
+        ctx.lineTo(x + blockWidth, y + 28);
+        ctx.moveTo(x, y + 48);
+        ctx.lineTo(x + blockWidth, y + 48);
+        ctx.stroke();
+    }
+}
+
 // --- FÍSICAS DE LOS JUEGOS (Ajustes de dificultad) ---
 let player_x = 100;
 let player_y = 300;
@@ -376,6 +530,7 @@ function registrarRepeticion() {
     if (repeticiones > 0 && repeticiones % 10 === 0) {
         estado_actual = ESTADO_DESCANSO;
         tiempo_fin_descanso = Date.now() + 30000; // 30 segundos
+        obstacles = []; // Limpiar obstáculos al iniciar el descanso para evitar acumulaciones
     }
 }
 
@@ -807,9 +962,9 @@ function gameLoop() {
         let titulo = "", instruccion = "", color = "";
         
         if (modo_juego === 1) {
-            titulo = "EJERCICIO 1: COORDINACIÓN";
-            instruccion = "Contracción rápida para saltar obstáculos.\nFomenta reflejos rápidos.";
-            color = "#bb86fc";
+            titulo = "EJERCICIO 1: MARIO RUNNER";
+            instruccion = "Realiza una contracción muscular rápida para saltar obstáculos.\nEsquiva Goombas y tuberías.";
+            color = "#ff3333";
         } else if (modo_juego === 2) {
             titulo = "EJERCICIO 2: APERTURA";
             instruccion = "Mantén contracción media para subir, relaja para bajar.\nFomenta control sostenido.";
@@ -869,17 +1024,35 @@ function gameLoop() {
         if (restante <= 0) {
             estado_actual = ESTADO_JUGANDO;
             inicio_sesion += 30000; // Agregar tiempo de descanso para no dañar el cronómetro
+            obstacles = []; // Limpiar obstáculos
+            timer_obstaculo = Date.now() + 2000; // Dar 2 segundos de gracia al reiniciar
         }
     } 
     
     else if (estado_actual === ESTADO_JUGANDO) {
         ctx.clearRect(0, 0, ANCHO, ALTO);
         
-        // --- JUEGO 1: COORDINACIÓN (Runner) ---
+        // --- JUEGO 1: COORDINACIÓN (Mario Runner) ---
         if (modo_juego === 1) {
             let suelo_y = ALTO - 100;
             let now = Date.now();
             
+            // Fondo cielo de Mario
+            ctx.fillStyle = "#5c94fc";
+            ctx.fillRect(0, 0, ANCHO, ALTO);
+            
+            // Nubes en movimiento
+            let cloudOffset = (Date.now() / 80) % (ANCHO + 200);
+            dibujarNube(ANCHO - cloudOffset, 60);
+            dibujarNube(ANCHO * 0.5 - cloudOffset, 120);
+            dibujarNube(ANCHO * 1.5 - cloudOffset, 80);
+            
+            // Arbustos en movimiento
+            let bushOffset = (Date.now() / 25) % (ANCHO + 200);
+            dibujarArbusto(ANCHO - bushOffset, suelo_y - 20);
+            dibujarArbusto(ANCHO * 0.4 - bushOffset, suelo_y - 20);
+            dibujarArbusto(ANCHO * 1.3 - bushOffset, suelo_y - 20);
+
             // Flanco de subida (rising edge) + Cooldown para evitar el doble salto accidental
             let is_above = valor_procesado > umbral_calibrado;
             let rising_edge = is_above && !prev_above_thresh;
@@ -897,49 +1070,83 @@ function gameLoop() {
                 player_vel = 0;
             }
             
-            // Dibujar suelo
-            ctx.strokeStyle = "white";
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.moveTo(0, suelo_y + 10);
-            ctx.lineTo(ANCHO, suelo_y + 10);
-            ctx.stroke();
+            // Dibujar suelo de bloques de Mario
+            dibujarSueloMario(suelo_y);
             
-            // Dibujar Jugador (bola morada)
-            ctx.beginPath();
-            ctx.arc(120, player_y - 10, 20, 0, Math.PI * 2);
-            ctx.fillStyle = "#bb86fc";
-            ctx.strokeStyle = "white";
-            ctx.lineWidth = 2;
-            ctx.fill();
-            ctx.stroke();
+            // Dibujar Mario (Jugador)
+            let sprite_x = 120 - 18;
+            let sprite_y = player_y - 10 - 24;
+            let marioMatrix = MARIO_STAND;
+            if (player_y < suelo_y) {
+                marioMatrix = MARIO_JUMP;
+            } else {
+                marioMatrix = (Math.floor(Date.now() / 150) % 2 === 0) ? MARIO_STAND : MARIO_RUN;
+            }
+            dibujarSprite(ctx, sprite_x, sprite_y, marioMatrix, 3, MARIO_COLORES);
             
-            // Spawn de obstáculos (Triángulos)
+            // Spawn de obstáculos (Goombas o tuberías)
             if (now > timer_obstaculo) {
-                obstacles.push({ x: ANCHO, y: suelo_y - 20, passed: false });
-                timer_obstaculo = now + 4000 + Math.random() * 2000; // Obstáculos espaciados y fáciles
+                let tipo = Math.random() < 0.5 ? 'goomba' : 'pipe';
+                obstacles.push({ x: ANCHO, type: tipo, passed: false });
+                timer_obstaculo = now + 3500 + Math.random() * 2000;
             }
             
+            // Mario AABB
+            const m_left = 102 + 4;
+            const m_right = 138 - 4;
+            const m_top = player_y - 34 + 4;
+            const m_bottom = player_y + 14;
+
             for (let i = obstacles.length - 1; i >= 0; i--) {
                 let obs = obstacles[i];
-                obs.x -= 3.0 * dt; // Velocidad de obstáculo lenta y terapéutica y con dt
+                obs.x -= 3.0 * dt; // Velocidad de obstáculo lenta y terapéutica
                 
-                // Dibujar obstáculo
-                ctx.beginPath();
-                ctx.moveTo(obs.x, obs.y + 10);
-                ctx.lineTo(obs.x + 20, obs.y - 30);
-                ctx.lineTo(obs.x + 40, obs.y + 10);
-                ctx.closePath();
-                ctx.fillStyle = "#CF6679";
-                ctx.strokeStyle = "red";
-                ctx.lineWidth = 1;
-                ctx.fill();
-                ctx.stroke();
+                let o_left, o_right, o_top, o_bottom;
                 
-                // Colisión (Hitbox indulgente de 12px de margen)
-                const hit = 120 + 20 - 12 > obs.x + 12 && 
-                            120 - 20 + 12 < obs.x + 40 - 12 && 
-                            player_y > obs.y - 30 + 12;
+                if (obs.type === 'goomba') {
+                    o_left = obs.x + 4;
+                    o_right = obs.x + 32;
+                    o_top = 388 + 4;
+                    o_bottom = 430;
+                    
+                    // Dibujar Goomba
+                    dibujarSprite(ctx, obs.x, 388, GOOMBA_SPRITE, 3, GOOMBA_COLORES);
+                } else {
+                    // Tubería (Pipe)
+                    o_left = obs.x + 2;
+                    o_right = obs.x + 36;
+                    o_top = 370;
+                    o_bottom = 430;
+                    
+                    // Dibujar Pipe
+                    ctx.fillStyle = "#00a230"; // Green main
+                    ctx.strokeStyle = "#000000";
+                    ctx.lineWidth = 2;
+                    
+                    // Lip
+                    ctx.beginPath();
+                    ctx.roundRect(obs.x - 4, 370, 46, 16, 2);
+                    ctx.fill();
+                    ctx.stroke();
+                    
+                    // Body
+                    ctx.beginPath();
+                    ctx.roundRect(obs.x, 386, 38, 44, 2);
+                    ctx.fill();
+                    ctx.stroke();
+                    
+                    // Brillo y sombras
+                    ctx.fillStyle = "#8cd600"; // Light green highlight
+                    ctx.fillRect(obs.x + 4, 386, 4, 44);
+                    ctx.fillRect(obs.x, 370, 4, 16);
+                    
+                    ctx.fillStyle = "#007010"; // Dark green shadow
+                    ctx.fillRect(obs.x + 30, 386, 4, 44);
+                    ctx.fillRect(obs.x + 36, 370, 4, 16);
+                }
+                
+                // Colisión AABB
+                const hit = (m_left < o_right) && (m_right > o_left) && (m_top < o_bottom) && (m_bottom > o_top);
                 
                 if (hit) {
                     gameOver();
@@ -952,7 +1159,7 @@ function gameLoop() {
                     obs.passed = true;
                 }
                 
-                if (obs.x < -50) obstacles.splice(i, 1);
+                if (obs.x < -60) obstacles.splice(i, 1);
             }
         } 
         
